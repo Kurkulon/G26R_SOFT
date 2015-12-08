@@ -1,0 +1,247 @@
+#include "hardware.h"
+
+#include <bfrom.h>
+#include <sys\exception.h>
+//#include <cdefBF592-A.h>
+//#include <ccblkfn.h>
+
+
+//++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+//static void LowLevelInit();
+
+//++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+static void InitRTT()
+{
+	*pTIMER0_CONFIG = PERIOD_CNT|PWM_OUT|OUT_DIS;
+	*pTIMER0_PERIOD = 0xFFFFFFFF;
+	*pTIMER_ENABLE = TIMEN0;
+}
+
+//++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+static void Init_PLL()
+{
+	u32 SIC_IWR1_reg;                /* backup SIC_IWR1 register */
+
+	/* use Blackfin ROM SysControl() to change the PLL */
+    ADI_SYSCTRL_VALUES sysctrl = {	VRCTL_VALUE,
+									PLLCTL_VALUE,		/* (25MHz CLKIN x (MSEL=16))::CCLK = 400MHz */
+									PLLDIV_VALUE,		/* (400MHz/(SSEL=4))::SCLK = 100MHz */
+									PLLLOCKCNT_VALUE,
+									PLLSTAT_VALUE };
+
+	/* use the ROM function */
+	bfrom_SysControl( SYSCTRL_WRITE | SYSCTRL_PLLCTL | SYSCTRL_PLLDIV, &sysctrl, 0);
+
+}
+
+//++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+bool defPPI_Ready = false;
+static bool *ppi_Ready = &defPPI_Ready;
+
+EX_INTERRUPT_HANDLER(PPI_ISR)
+{
+	if (*pDMA0_IRQ_STATUS & 1)
+	{
+		*pDMA0_IRQ_STATUS = 1;
+		*pPPI_CONTROL = 0;
+		*pDMA0_CONFIG = 0;
+		*ppi_Ready = true;
+
+		*pPORTFIO_CLEAR = 1<<9; // SYNC 
+	}
+	else if (*pDMA0_IRQ_STATUS & 2)
+	{
+		*pDMA0_IRQ_STATUS = 2;
+		*pPPI_CONTROL = 0;
+		*pDMA0_CONFIG = 0;
+		*ppi_Ready = true;
+
+		*pPORTFIO_CLEAR = 1<<9; // SYNC 
+	};
+}
+
+//++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+static void InitPPI()
+{
+	*pTIMER_DISABLE = TIMDIS1;
+	*pTIMER1_CONFIG = PERIOD_CNT|PWM_OUT;
+	*pTIMER1_PERIOD = 5;
+	*pTIMER1_WIDTH = 2;
+
+	*pPPI_CONTROL = 0;
+	*pDMA0_CONFIG = 0;
+
+	*pEVT8 = (void*)PPI_ISR;
+	*pIMASK |= EVT_IVG8; 
+	*pSIC_IMASK |= 1<<8;
+}
+
+//++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+void ReadPPI(void *dst, u16 len, u16 clkdiv, bool *ready)
+{
+	ppi_Ready = ready;
+
+	*ppi_Ready = false;
+	*pPPI_CONTROL = 0;
+	*pDMA0_CONFIG = 0;
+
+	if (clkdiv < 5) { clkdiv = 5; };
+
+	*pTIMER_DISABLE = TIMDIS1;
+	*pTIMER1_CONFIG = PERIOD_CNT|PWM_OUT;
+	*pTIMER1_PERIOD = clkdiv;
+	*pTIMER1_WIDTH = clkdiv>>1;
+
+	*pDMA0_START_ADDR = dst;
+	*pDMA0_X_COUNT = len/2;
+	*pDMA0_X_MODIFY = 2;
+
+//	*pPPI_COUNT = len/2 - 1;
+	*pDMA0_CONFIG = FLOW_STOP|DI_EN|WDSIZE_16|SYNC|WNR|DMAEN;
+	*pPPI_CONTROL = FLD_SEL|PORT_CFG|POLC|DLEN_12|XFR_TYPE|PORT_EN;
+	*pTIMER_ENABLE = TIMEN1;
+
+	*pPORTFIO_SET = 1<<9; // SYNC 
+}
+
+//++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+static u16 twiWriteCount = 0;
+static u16 twiReadCount = 0;
+static u16 *twiWriteData = 0;
+static u16 *twiReadData = 0;
+
+EX_INTERRUPT_HANDLER(TWI_ISR)
+{
+	if (*pTWI_INT_STAT & RCVSERV)
+	{
+
+
+		*pTWI_INT_STAT = RCVSERV;
+	};
+	
+	if (*pTWI_INT_STAT & XMTSERV)
+	{
+		*pTWI_XMT_DATA16 = *twiWriteData++;
+		twiWriteCount--;
+
+
+		*pTWI_INT_STAT = XMTSERV;
+	};
+	
+	if (*pTWI_INT_STAT & MERR)
+	{
+		
+
+		*pTWI_INT_STAT = MERR;
+	};
+
+	if (*pTWI_INT_STAT & MCOMP)
+	{
+
+
+		*pTWI_INT_STAT = MCOMP;
+	};
+}
+
+//++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+static void InitTWI()
+{
+	*pTWI_CONTROL = TWI_ENA | 10;
+	*pTWI_CLKDIV = (8<<8)|17;
+	*pTWI_INT_MASK = RCVSERV|XMTSERV|MERR|MCOMP;
+	*pTWI_MASTER_ADDR = 0;
+
+//	*pSIC_IAR3 = (*pSIC_IAR3 & ~0xF)|8;
+	*pEVT12 = (void*)TWI_ISR;
+	*pIMASK |= EVT_IVG12; 
+	*pSIC_IMASK |= 1<<24;
+}
+
+//++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+void WriteTWI(void *src, u16 len)
+{
+	*pTWI_MASTER_CTL = 0;
+
+	twiWriteData = (u16*)src;
+	twiWriteCount = len>>1;
+	*pTWI_MASTER_ADDR = 1;
+	*pTWI_XMT_DATA16 = *twiWriteData++;	twiWriteCount--;
+	*pTWI_FIFO_CTL = XMTINTLEN;
+	*pTWI_INT_MASK = XMTSERV|MERR|MCOMP;
+	*pTWI_MASTER_CTL = (len<<6)|FAST|MEN;
+
+}
+
+//++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+static void LowLevelInit()
+{
+	Init_PLL();
+
+								//  5  2 1  8 7  4 3  0								
+	*pPORTF_MUX = 0x000F;		//  0000 0000 0000 1111
+	*pPORTG_MUX = 0xFF00;		//  1111 1111 0000 0000
+
+	*pPORTF_FER = 0x1C0F;		//  0001 1100 0000 1111
+	*pPORTG_FER = 0xFF00;		//  1111 1111 0000 0000
+
+	*pPORTFIO_DIR = 0x0200;		//  0000 0010 0000 0000
+	*pPORTGIO_DIR = 0x000F;		//  0000 0000 0000 1111
+
+	*pPORTFIO_INEN = 0x0000;	//  0000 0000 0000 0000
+	*pPORTGIO_INEN = 0x0000;	//  0000 0000 0000 0000
+
+	*pPORTGIO = 0;
+	*pPORTFIO = 0;
+}
+
+//++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+//++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+//++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+//++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+//++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+//++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+
+//++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+void InitHardware()
+{
+	LowLevelInit();
+
+	InitRTT();
+
+	InitPPI();
+
+	InitTWI();
+
+//	InitSPORT();
+
+	//u32 t = GetRTT();
+
+	//while((GetRTT() - t) < 100000)
+	//{
+	//	UpdateHardware();
+	//};
+}
+
+//++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+void UpdateHardware()
+{
+
+//	spi.Update();
+
+}
+
+//++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
