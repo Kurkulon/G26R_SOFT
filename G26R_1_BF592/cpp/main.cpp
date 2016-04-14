@@ -10,6 +10,23 @@ static ComPort com;
 
 static u16 spd[4000];
 
+//static byte twiBuffer[14] = {0x11,0x22,0x33,0x44,0x55,0x66,0x77,0x88,0x99,0xAA,0xBB,0xCC,0xDD,0xEE};
+
+struct Cmd
+{
+	byte cmd; 
+	byte chnl; 
+	byte clk; 
+	byte disTime; 
+	u16 enTime; 
+	byte chkSum; 
+	byte busy; 
+	byte ready; 
+};
+
+static Cmd req = {0, 0, 52, 255, 25*2000, 0, 0, 0};
+static Cmd rsp;
+
 //static u16 spd2[512*2];
 //
 //static i16 ch1[512];
@@ -28,6 +45,74 @@ static byte netAdr = 1;
 
 
 //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+static void UpdateFire()
+{
+	static byte i = 0;
+	static bool ready = false;
+	static RTM32 tm;
+
+
+	switch (i)
+	{
+		case 0:
+
+			WriteTWI(&req, sizeof(req));
+
+			i++;
+
+			break;
+
+		case 1:
+
+			if ((*pTWI_MASTER_CTL & MEN) == 0)
+			{
+				ReadTWI(&rsp, sizeof(rsp));
+
+				i++;
+			};
+
+			break;
+
+		case 2:
+
+			if ((*pTWI_MASTER_CTL & MEN) == 0)
+			{
+				i = (rsp.busy || !rsp.ready) ? 1 : (i+1);
+			};
+
+			break;
+
+		case 3:
+
+			ReadPPI(spd, sizeof(spd), 5, &ready);
+
+			i++;
+
+			break;
+
+		case 4:
+
+			if (ready)
+			{
+				tm.Reset();
+
+				i++;
+			};
+
+			break;
+
+		case 5:
+
+			if (tm.Check(MS2CLK(100)))
+			{
+				i = 0;
+			};
+
+
+	};
+
+}
 
 //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
@@ -119,41 +204,11 @@ int main( void )
 
 //	InitNetAdress();
 
-	WriteTWI(spd, 2);
-
-	ReadPPI(spd, sizeof(spd), 5, &ready1);
-
 	while (1)
 	{
 		*pPORTFIO_TOGGLE = 1<<5;
 
-		if ((*pTWI_MASTER_CTL & MEN) == 0)
-		{
-			WriteTWI(spd, 8);
-		};
-
-		switch (i)
-		{
-			case 0:
-
-				if (ready1)
-				{
-					ReadPPI(spd, sizeof(spd), 5, &ready1);
-					tm.Reset();
-					i++;
-				};
-
-				break;
-
-			case 1:
-
-				if (tm.Check(MS2CLK(20)))
-				{
-					i = 0;
-				};
-
-				break;
-		};
+		UpdateFire();
 
 //		UpdateBlackFin();
 

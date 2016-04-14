@@ -40,7 +40,21 @@ u32 fvAP = 0;
 //u32 startTime = 0;
 //u32 stopTime = 0;
 
-static byte twiWriteData[2];
+//static byte twiWriteData[2];
+
+__packed struct  Cmd
+{
+	byte cmd; 
+	byte chnl; 
+	byte clk; 
+	byte disTime; 
+	u16 enTime; 
+	byte chkSum; 
+	byte busy; 
+	byte ready; 
+};
+
+static Cmd req;
 
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
@@ -232,9 +246,21 @@ static void InitADC()
 
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
+//byte *twiData = (byte*)&twiReq;
+u16 twiCount = 0;
+u16 twiMaxCount = sizeof(req);
+u32 twiReqCount = 0;
+bool twiWrite = false;
+bool twiRead = false;
+
 static __irq void Handler_TWI()
 {
 	using namespace HW;
+
+	static byte *p = (byte*)&req;
+	static u16 count = 0;
+	static bool read = false;
+	static bool write = false;
 
 	if(I2C0->INTSTAT & SLVPENDING)
 	{
@@ -242,26 +268,69 @@ static __irq void Handler_TWI()
 
 		if(state == SLVST_ADDR) // Address plus R/W received
 		{
+			p = (byte*)&req;	count = 0;
+
+			read = false;
+			write = false;
+
+			//*p = I2C0->SLVDAT; // receive data
+			//if (count <= twiMaxCount)
+			//{
+			//	p++;
+			//};
+
+			//count++;
+
 			I2C0->SLVCTL = SLVCONTINUE;
 		}
 		else if(state == SLVST_RX) // Received data is available
 		{
-			byte data = I2C0->SLVDAT; // receive data
+			*p = I2C0->SLVDAT; // receive data
 
 			I2C0->SLVCTL = SLVCONTINUE;
+
+			if (count <= twiMaxCount)
+			{
+				p++;
+			};
+
+			count++;
+
+			read = true;
 		}
 		else if(state == SLVST_TX) // Data can be transmitted 
 		{
-			I2C0->SLVDAT = 0; // write data
+			I2C0->SLVDAT = *p++; // write data
 
 			I2C0->SLVCTL = SLVCONTINUE;
+
+			//if (count <= twiMaxCount)
+			//{
+			//	p++;
+			//};
+
+			count++;
+
+			write = true;
 		};
+		
+		I2C0->STAT = SLVPENDING;
 	};
 
-	//if(I2C0->INTSTAT & SLVDESELEN)
-	//{
-	//	I2C0->STAT = SLVDESELEN;
-	//};
+	if(I2C0->INTSTAT & SLVDESELEN)
+	{
+		I2C0->STAT = SLVDESELEN;
+		twiCount = count;
+		twiReqCount++;
+		twiWrite = write;
+		twiRead = read;
+
+		if (write)
+		{
+			req.busy = true;
+			req.ready = false;
+		};
+	};
 }
 
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -279,20 +348,53 @@ static void InitTWI()
 	CM0::NVIC->ICPR[0] = 1 << I2C0_IRQ;
 	CM0::NVIC->ISER[0] = 1 << I2C0_IRQ;
 
-	I2C0->SLVADR0 = 1 << 1;
-	I2C0->INTENSET = SLVPENDINGEN/*|SLVDESELEN*/;
+	I2C0->CLKDIV = 14;
+	I2C0->SLVADR0 = 11 << 1;
+	I2C0->INTENSET = SLVPENDINGEN|SLVDESELEN;
 	I2C0->CFG = SLVEN;
 }
 
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
-void InitHardware()
+static void UpdateTWI()
+{
+	static byte i = 0;
+
+
+	switch (i)
+	{
+		case 0:
+
+			if (twiWrite)
+			{
+				req.busy = true;
+				req.ready = false;
+				i++;
+			};
+
+			break;
+
+		case 1:
+
+			req.busy = false;
+			req.ready = true;
+			twiWrite = false;
+			i = 0;
+
+			break;
+	};
+
+}
+
+//++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+	void InitHardware()
 {
 	InitVectorTable();
 	Init_time();
 	InitADC();
 	InitPWM();
-//	InitTWI();
+	InitTWI();
 }
 
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -310,15 +412,10 @@ void UpdateHardware()
 	switch(i++)
 	{
 		CALL( UpdateADC() );
-//		CALL( PID_Update() );
+		CALL( UpdateTWI() );
 	};
 
-//	i = (i > (__LINE__-S-3)) ? 0 : i;
-	i &= 1;
-	
-//	UpdateMotor();
-
-//	if (tm.Check(1000)) { TahoHandler(); }
+	i = (i > (__LINE__-S-3)) ? 0 : i;
 }
 
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++

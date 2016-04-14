@@ -121,6 +121,8 @@ EX_INTERRUPT_HANDLER(TWI_ISR)
 {
 	if (*pTWI_INT_STAT & RCVSERV)
 	{
+		*twiReadData++ = *pTWI_RCV_DATA16;
+		twiReadCount++;
 
 
 		*pTWI_INT_STAT = RCVSERV;
@@ -144,8 +146,11 @@ EX_INTERRUPT_HANDLER(TWI_ISR)
 
 	if (*pTWI_INT_STAT & MCOMP)
 	{
+		*pTWI_MASTER_CTL = 0;
+		*pTWI_MASTER_STAT = 0x3E;
+		*pTWI_FIFO_CTL = XMTFLUSH|RCVFLUSH;
 
-
+		*pTWI_INT_MASK = 0;
 		*pTWI_INT_STAT = MCOMP;
 	};
 }
@@ -155,8 +160,8 @@ EX_INTERRUPT_HANDLER(TWI_ISR)
 static void InitTWI()
 {
 	*pTWI_CONTROL = TWI_ENA | 10;
-	*pTWI_CLKDIV = (8<<8)|17;
-	*pTWI_INT_MASK = RCVSERV|XMTSERV|MERR|MCOMP;
+	*pTWI_CLKDIV = (8<<8)|12;
+	*pTWI_INT_MASK = 0;
 	*pTWI_MASTER_ADDR = 0;
 
 //	*pSIC_IAR3 = (*pSIC_IAR3 & ~0xF)|8;
@@ -170,15 +175,30 @@ static void InitTWI()
 void WriteTWI(void *src, u16 len)
 {
 	*pTWI_MASTER_CTL = 0;
+	*pTWI_MASTER_STAT = 0x3E;
+	*pTWI_FIFO_CTL = XMTINTLEN;
 
 	twiWriteData = (u16*)src;
 	twiWriteCount = len>>1;
-	*pTWI_MASTER_ADDR = 1;
+	*pTWI_MASTER_ADDR = 11;
 	*pTWI_XMT_DATA16 = *twiWriteData++;	twiWriteCount--;
-	*pTWI_FIFO_CTL = XMTINTLEN;
 	*pTWI_INT_MASK = XMTSERV|MERR|MCOMP;
 	*pTWI_MASTER_CTL = (len<<6)|FAST|MEN;
+}
 
+//++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+void ReadTWI(void *dst, u16 len)
+{
+	*pTWI_MASTER_CTL = 0;
+	*pTWI_MASTER_STAT = 0x3E;
+
+	twiReadData = (u16*)dst;
+	twiReadCount = 0;
+	*pTWI_MASTER_ADDR = 11;
+	*pTWI_FIFO_CTL = RCVINTLEN;
+	*pTWI_INT_MASK = RCVSERV|MERR|MCOMP;
+	*pTWI_MASTER_CTL = (len<<6)|MDIR|FAST|MEN;
 }
 
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
