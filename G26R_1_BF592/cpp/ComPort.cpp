@@ -298,12 +298,12 @@ bool ComPort::Update()
 
 		case READING:
 
-			if (*pUART0_LSR & (BI|OE|PE|FE)) 
-			{
-				DisableReceive();
-				_status485 = READ_END;
-				return false;
-			};
+			//if (*pUART0_LSR & (BI|OE|PE|FE)) 
+			//{
+			//	DisableReceive();
+			//	_status485 = READ_END;
+			//	return false;
+			//};
 
 			if ((_prevDmaCounter-*pDMA7_CURR_X_COUNT) == 0)
 			{
