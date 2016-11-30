@@ -290,13 +290,13 @@ static bool RequestMan(ComPort::WriteBuffer *wb, ComPort::ReadBuffer *rb)
 
 	switch (t)
 	{
-		case 0: 	r = RequestMan_00(p+1, len, wb); break;
-		case 1: 	r = RequestMan_10(p+1, len, wb); break;
-		case 2: 	r = RequestMan_20(p+1, len, wb); break;
-		case 3: 	r = RequestMan_30(p+1, len, wb); break;
-		case 8: 	r = RequestMan_80(p+1, len, wb); break;
-		case 9:		r = RequestMan_90(p+1, len, wb); break;
-		case 0xF:	r = RequestMan_F0(p+1, len, wb); break;
+		case 0: 	r = RequestMan_00(p, len, wb); break;
+		case 1: 	r = RequestMan_10(p, len, wb); break;
+		case 2: 	r = RequestMan_20(p, len, wb); break;
+		case 3: 	r = RequestMan_30(p, len, wb); break;
+		case 8: 	r = RequestMan_80(p, len, wb); break;
+		case 9:		r = RequestMan_90(p, len, wb); break;
+		case 0xF:	r = RequestMan_F0(p, len, wb); break;
 		
 //		default:	bfURC++; 
 	};
