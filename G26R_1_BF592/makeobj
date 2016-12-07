@@ -65,7 +65,7 @@ compiler_options = $(debug_compiler_options) -c -c++ -g -structs-do-not-overlap 
 
 ##################################################################################################
 
-link_options = -e -proc ADSP-BF592-A -si-revision 0.2 -MDNO_UTILITY_ROM -MD__cplusplus
+link_options = -e -proc ADSP-BF592-A -si-revision 0.2 -MDNO_UTILITY_ROM -MD__cplusplus -MDUSE_SCRATCHPAD_STACK -MDUSE_SCRATCHPAD_HEAP -MDSTACK_SIZE=1K -MDHEAP_SIZE=0 -MDSTACKHEAP_SIZE=1K
   
 ##################################################################################################
 

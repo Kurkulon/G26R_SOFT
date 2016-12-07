@@ -8,9 +8,13 @@ static ComPort com;
 //
 //static byte data[256*48];
 
-static u16 spd[4000];
+//static u16 spd[1024*13];
 
 //static byte twiBuffer[14] = {0x11,0x22,0x33,0x44,0x55,0x66,0x77,0x88,0x99,0xAA,0xBB,0xCC,0xDD,0xEE};
+
+struct Req30 { u16 rw; u16 gain; u16 st; u16 sl; u16 sd; u16 flt; u16 data[1024]; };
+
+static Req30 req30[13];
 
 struct Cmd
 {
@@ -51,6 +55,8 @@ static u16 verDevice = 1;
 
 static u32 manCounter = 0;
 
+static bool startFire = false;
+
 
 
 //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -61,10 +67,27 @@ static void UpdateFire()
 	static bool ready = false;
 	static RTM32 tm;
 
+	static byte fnum = 0;
+
+	Req30 &req = req30[fnum];
+
 
 	switch (i)
 	{
 		case 0:
+
+			if (startFire)
+			{
+				startFire = false;
+
+				fnum = 0;
+
+				i++;
+			};
+
+			break;
+
+		case 1:
 
 			WriteTWI(&req, sizeof(req));
 
@@ -72,7 +95,7 @@ static void UpdateFire()
 
 			break;
 
-		case 1:
+		case 2:
 
 			if ((*pTWI_MASTER_CTL & MEN) == 0)
 			{
@@ -83,42 +106,40 @@ static void UpdateFire()
 
 			break;
 
-		case 2:
+		case 3:
 
 			if ((*pTWI_MASTER_CTL & MEN) == 0)
 			{
-				i = (rsp.busy || !rsp.ready) ? 1 : (i+1);
+				i = (rsp.busy || !rsp.ready) ? (i-1) : (i+1);
 			};
-
-			break;
-
-		case 3:
-
-			ReadPPI(spd, sizeof(spd), 5, &ready);
-
-			i++;
 
 			break;
 
 		case 4:
 
-			if (ready)
-			{
-				tm.Reset();
+			ReadPPI(req30[fnum].data, sizeof(req30[fnum].data), 16, &ready);
 
-				i++;
-			};
+			i++;
 
 			break;
 
 		case 5:
 
-			if (tm.Check(MS2CLK(100)))
+			if (ready)
 			{
-				i = 0;
+				req.rw = manReqWord + 0x30 + fnum;
+				req.gain = 1;
+				req.st = 4;
+				req.sl = 1024;
+				req.sd = 0;
+				req.flt = 0;
+
+				fnum++;
+				
+				i = (fnum < 13) ? 1 : 0;
 			};
 
-
+			break;
 	};
 
 }
@@ -173,6 +194,8 @@ static bool RequestMan_20(u16 *data, u16 len, ComPort::WriteBuffer *wb)
 
 	if (wb == 0) return false;
 
+	startFire = true;
+
 	rsp[0] = manReqWord|0x20;			//	1. ответное слово	
 	rsp[1] = GD(&manCounter, u16, 0);	//	2. счётчик. младшие 2 байта
 	rsp[2] = GD(&manCounter, u16, 1);	//	3. счётчик. старшие 2 байта
@@ -192,20 +215,34 @@ static bool RequestMan_20(u16 *data, u16 len, ComPort::WriteBuffer *wb)
 
 static bool RequestMan_30(u16 *data, u16 len, ComPort::WriteBuffer *wb)
 {
-	static u16 rsp[6+512];
+//	static u16 rsp[6+512];
 
 	if (wb == 0) return false;
 
-	rsp[0] = data[0];			// 	1. ответное слово
-	rsp[1] = 1;				 	//	2. КУ
-	rsp[2] = 2;		 			//	3. Шаг оцифровки
-	rsp[3] = 512;			 	//	4. Длина оцифровки
-	rsp[4] = 0;					//	5. Задержка оцифровки
-	rsp[5] = 0;					//	6. Фильтр
-	rsp[6] = 0;					//	7-?. данные (до 2048шт)
+	byte num = data[0] & 15;
 
-	wb->data = rsp;
-	wb->len = sizeof(rsp);
+	if (num > 12) { num = 12; };
+
+	Req30 &req = req30[num];
+
+	//rsp[0] = data[0];			// 	1. ответное слово
+	//rsp[1] = 1;				 	//	2. КУ
+	//rsp[2] = 2;		 			//	3. Шаг оцифровки
+	//rsp[3] = 512;			 	//	4. Длина оцифровки
+	//rsp[4] = 0;					//	5. Задержка оцифровки
+	//rsp[5] = 0;					//	6. Фильтр
+	//rsp[6] = 0;					//	7-?. данные (до 2048шт)
+
+	//req.rw = data[0];			// 	1. ответное слово
+	//req.gain = 1;				 	//	2. КУ
+	//req.st = 8;		 			//	3. Шаг оцифровки
+	//req.sl = 512;			 	//	4. Длина оцифровки
+	//req.sd = 0;					//	5. Задержка оцифровки
+	//req.flt = 0;					//	6. Фильтр
+//	rsp[6] = 0;					//	7-?. данные (до 2048шт)
+
+	wb->data = &req30[num];
+	wb->len = sizeof(req30[num]);
 
 	return true;
 }
@@ -401,6 +438,11 @@ int main( void )
 		UpdateFire();
 
 		UpdateBlackFin();
+
+		//if (tm.Check(MS2CLK(100)))
+		//{
+		//	startFire = true;
+		//};
 
 		*pPORTFIO_TOGGLE = 1<<8;
 

@@ -176,13 +176,13 @@ static void InitPWM()
 	SCT->MATCH_L[3] = US2CLK(5);		// LIN=0; HIN=0; DIS=1;
 	SCT->MATCH_L[4] = US2CLK(2000);		// LIN=1; HIN=0; DIS=0;
 
-	SCT->OUT[0].SET = (1<<1)|(1<<4);
-	SCT->OUT[0].CLR = (1<<0)|(1<<2)|(1<<3);
+	SCT->OUT[0].SET = (1<<1)|(1<<4)|(1<<2)|(1<<3); // LIN
+	SCT->OUT[0].CLR = (1<<0);//|(1<<2)|(1<<3);
 
-	SCT->OUT[1].SET = (1<<0);
+	SCT->OUT[1].SET = (1<<0);						// HIN
 	SCT->OUT[1].CLR = (1<<1)|(1<<2)|(1<<3)|(1<<4);
 
-	SCT->OUT[2].SET = (1<<3);//|(1<<0)|(1<<1)|(1<<2)|(1<<4);
+	SCT->OUT[2].SET = 0;//(1<<4);						// DIS
 	SCT->OUT[2].CLR = (1<<0)|(1<<1)|(1<<2)|(1<<4);
 
 	SCT->EVENT[0].STATE = 1;
