@@ -173,17 +173,19 @@ static void InitPWM()
 	SCT->MATCH_L[0] = US2CLK(1);		// LIN=0; HIN=1; DIS=0;
 	SCT->MATCH_L[1] = US2CLK(2.0416);	// LIN=1; HIN=0; DIS=0;
 	SCT->MATCH_L[2] = US2CLK(3.0833);	// LIN=0; HIN=0; DIS=0;
-	SCT->MATCH_L[3] = US2CLK(5);		// LIN=0; HIN=0; DIS=1;
-	SCT->MATCH_L[4] = US2CLK(2000);		// LIN=1; HIN=0; DIS=0;
+	SCT->MATCH_L[3] = US2CLK(4.125);	// LIN=0; HIN=0; DIS=1;
+	SCT->MATCH_L[4] = US2CLK(5.1667);	// LIN=0; HIN=0; DIS=1;
+	SCT->MATCH_L[5] = US2CLK(20);		// LIN=0; HIN=0; DIS=1;
+	SCT->MATCH_L[6] = US2CLK(500);		// LIN=1; HIN=0; DIS=0;
 
-	SCT->OUT[0].SET = (1<<1)|(1<<4)|(1<<2)|(1<<3); // LIN
-	SCT->OUT[0].CLR = (1<<0);//|(1<<2)|(1<<3);
+	SCT->OUT[0].SET = (1<<1)|(1<<6);//|(1<<3);				// LIN
+	SCT->OUT[0].CLR = (1<<0)|(1<<2)|(1<<4)|(1<<5);
 
-	SCT->OUT[1].SET = (1<<0);						// HIN
-	SCT->OUT[1].CLR = (1<<1)|(1<<2)|(1<<3)|(1<<4);
+	SCT->OUT[1].SET = (1<<0);//|(1<<2);					// HIN
+	SCT->OUT[1].CLR = (1<<1)|(1<<3)|(1<<4)|(1<<5)|(1<<6);
 
-	SCT->OUT[2].SET = 0;//(1<<4);						// DIS
-	SCT->OUT[2].CLR = (1<<0)|(1<<1)|(1<<2)|(1<<4);
+	SCT->OUT[2].SET = (1<<5)|(1<<4)|(1<<3);						// DIS
+	SCT->OUT[2].CLR = (1<<0)|(1<<1)|(1<<2)|(1<<6);
 
 	SCT->EVENT[0].STATE = 1;
 	SCT->EVENT[0].CTRL = (1<<5)|(0<<6)|(1<<12)|0;
@@ -201,12 +203,18 @@ static void InitPWM()
 	SCT->EVENT[4].CTRL = (1<<5)|(0<<6)|(1<<12)|4;
 
 	SCT->EVENT[5].STATE = 1;
-	SCT->EVENT[5].CTRL = (3<<10)|(2<<12);
+	SCT->EVENT[5].CTRL = (1<<5)|(0<<6)|(1<<12)|5;
 
-	SCT->START_L = 1<<5;
-	SCT->STOP_L = (1<<4);
+	SCT->EVENT[6].STATE = 1;
+	SCT->EVENT[6].CTRL = (1<<5)|(0<<6)|(1<<12)|6;
+
+	SCT->EVENT[7].STATE = 1;
+	SCT->EVENT[7].CTRL = (3<<10)|(2<<12);
+
+	SCT->START_L = 1<<7;
+	SCT->STOP_L = (1<<6);
 	SCT->HALT_L = 0;
-	SCT->LIMIT_L = 1<<4;
+	SCT->LIMIT_L = 1<<6;
 
 	SCT->CONFIG = 1<<7; 
 

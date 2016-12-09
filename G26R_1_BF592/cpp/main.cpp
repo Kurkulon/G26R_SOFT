@@ -57,6 +57,11 @@ static u32 manCounter = 0;
 
 static bool startFire = false;
 
+static u16 sampleDelay = 800;
+static u16 sampleTime = 8;
+static u16 gain = 0;
+
+
 
 
 //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -81,6 +86,8 @@ static void UpdateFire()
 				startFire = false;
 
 				fnum = 0;
+
+				SetGain(gain);
 
 				i++;
 			};
@@ -117,7 +124,7 @@ static void UpdateFire()
 
 		case 4:
 
-			ReadPPI(req30[fnum].data, sizeof(req30[fnum].data), 16, &ready);
+			ReadPPI(req.data, sizeof(req.data), sampleTime*4, (u32)sampleDelay*4, &ready);
 
 			i++;
 
@@ -127,11 +134,18 @@ static void UpdateFire()
 
 			if (ready)
 			{
+				u16 *p = req.data;
+
+				for (u16 j = ArraySize(req.data); j > 0; j--)
+				{
+					*p++ -= 2048;
+				};
+
 				req.rw = manReqWord + 0x30 + fnum;
-				req.gain = 1;
-				req.st = 4;
+				req.gain = gain;
+				req.st = sampleTime;
 				req.sl = 1024;
-				req.sd = 0;
+				req.sd = sampleDelay;
 				req.flt = 0;
 
 				fnum++;
@@ -174,10 +188,10 @@ static bool RequestMan_10(u16 *data, u16 len, ComPort::WriteBuffer *wb)
 	if (wb == 0) return false;
 
 	rsp[0] = manReqWord|0x10;	// 	1. ответное слово
-	rsp[1] = 1;				 	//	2. КУ
-	rsp[2] = 2;		 			//	3. Шаг оцифровки
+	rsp[1] = gain;				//	2. КУ
+	rsp[2] = sampleTime;		//	3. Шаг оцифровки
 	rsp[3] = 512;			 	//	4. Длина оцифровки
-	rsp[4] = 0;					//	5. Задержка оцифровки
+	rsp[4] = sampleDelay;		//	5. Задержка оцифровки
 	rsp[5] = 0;					//	6. Фильтр
 
 	wb->data = rsp;			 
@@ -279,6 +293,37 @@ static bool RequestMan_90(u16 *data, u16 len, ComPort::WriteBuffer *wb)
 	static u16 rsp[1];
 
 	if (wb == 0 || len < 3) return false;
+
+
+	switch (data[1])
+	{
+		case 1:
+
+			gain = data[2];
+
+			break;
+
+		case 2:
+
+			sampleTime = data[2];
+
+			break;
+
+		case 3:
+
+			break;
+
+		case 4:
+
+			sampleDelay = data[2];
+
+			break;
+
+		case 5:
+
+			break;
+
+	};
 
 	rsp[0] = manReqWord|0x90;
  

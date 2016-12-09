@@ -17,10 +17,12 @@ inline u32 GetRTT() { return *pTIMER0_COUNTER; }
 extern bool defPPI_Ready;
 
 extern void SyncReadSPORT(void *dst1, void *dst2, u16 len1, u16 len2, u16 clkdiv, bool *ready0, bool *ready1);
-extern void ReadPPI(void *dst, u16 len, u16 clkdiv, bool *ready = &defPPI_Ready);
+extern void ReadPPI(void *dst, u16 len, u16 clkdiv, u32 delay, bool *ready = &defPPI_Ready);
 
 extern void WriteTWI(void *src, u16 len);
 extern void ReadTWI(void *dst, u16 len);
+
+extern void SetGain(byte v);
 
 
 struct RTM32

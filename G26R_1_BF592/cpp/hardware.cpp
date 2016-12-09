@@ -72,6 +72,15 @@ EX_INTERRUPT_HANDLER(PPI_ISR)
 
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
+EX_INTERRUPT_HANDLER(TIMER_PPI_ISR)
+{
+	*pDMA0_CONFIG = FLOW_STOP|DI_EN|WDSIZE_16|SYNC|WNR|DMAEN;
+	*pPPI_CONTROL = FLD_SEL|PORT_CFG|POLC|DLEN_12|XFR_TYPE|PORT_EN;
+	*pTIMER_ENABLE = TIMEN1;
+	*pTCNTL = 0;
+}
+//++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
 static void InitPPI()
 {
 	*pTIMER_DISABLE = TIMDIS1;
@@ -85,11 +94,14 @@ static void InitPPI()
 	*pEVT8 = (void*)PPI_ISR;
 	*pIMASK |= EVT_IVG8; 
 	*pSIC_IMASK |= 1<<8;
+
+	*pEVT6 = (void*)TIMER_PPI_ISR;
+	*pIMASK |= EVT_IVTMR; 
 }
 
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
-void ReadPPI(void *dst, u16 len, u16 clkdiv, bool *ready)
+void ReadPPI(void *dst, u16 len, u16 clkdiv, u32 delay, bool *ready)
 {
 	ppi_Ready = ready;
 
@@ -98,6 +110,7 @@ void ReadPPI(void *dst, u16 len, u16 clkdiv, bool *ready)
 	*pDMA0_CONFIG = 0;
 
 	if (clkdiv < 5) { clkdiv = 5; };
+	if (delay < 1) { delay = 1; };
 
 	*pTIMER_DISABLE = TIMDIS1;
 	*pTIMER1_CONFIG = PERIOD_CNT|PWM_OUT;
@@ -109,9 +122,13 @@ void ReadPPI(void *dst, u16 len, u16 clkdiv, bool *ready)
 	*pDMA0_X_MODIFY = 2;
 
 //	*pPPI_COUNT = len/2 - 1;
-	*pDMA0_CONFIG = FLOW_STOP|DI_EN|WDSIZE_16|SYNC|WNR|DMAEN;
-	*pPPI_CONTROL = FLD_SEL|PORT_CFG|POLC|DLEN_12|XFR_TYPE|PORT_EN;
-	*pTIMER_ENABLE = TIMEN1;
+	//*pDMA0_CONFIG = FLOW_STOP|DI_EN|WDSIZE_16|SYNC|WNR|DMAEN;
+	//*pPPI_CONTROL = FLD_SEL|PORT_CFG|POLC|DLEN_12|XFR_TYPE|PORT_EN;
+	//*pTIMER_ENABLE = TIMEN1;
+
+	*pTSCALE = 0;
+	*pTCOUNT = delay;
+	*pTCNTL = TINT|TMPWR|TMREN;
 
 	*pPORTFIO_SET = 1<<9; // SYNC 
 }

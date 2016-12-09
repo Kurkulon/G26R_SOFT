@@ -20,6 +20,10 @@
 #define US2CLK(x) ((u32)(x*1.0*SCLK/1e6+0.5))
 #define NS2CLK(x) ((u32)(x*1.0*SCLK/1e9+0.5))
 
+#define MS2CCLK(x) ((u32)(x*1.0*CCLK/1e3+0.5))
+#define US2CCLK(x) ((u32)(x*1.0*CCLK/1e6+0.5))
+#define NS2CCLK(x) ((u32)(x*1.0*CCLK/1e9+0.5))
+
 #include "bf592.h"
 
 #endif // CORE_H__05_12_12__16_12
