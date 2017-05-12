@@ -138,30 +138,40 @@ extern "C" void SystemInit()
 
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
-static void UpdateADC()
+//static void UpdateADC()
+//{
+//	using namespace HW;
+//
+//	static byte i = 0;
+//
+//	#define CALL(p) case (__LINE__-S): p; break;
+//
+//	enum C { S = (__LINE__+3) };
+//	switch(i++)
+//	{
+//		CALL( fcurADC += (((ADC->DAT0&0xFFF0) * 1800 ) >> 16) - curADC;	curADC = fcurADC >> 3;	);
+//		CALL( fvAP += (((ADC->DAT1&0xFFF0) * 3300) >> 16) - vAP; vAP = fvAP >> 3;	);
+//	};
+//
+////	i = (i > (__LINE__-S-3)) ? 0 : i;
+//	i &= 1;
+//
+//	#undef CALL
+//}
+
+//++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+static __irq void Handler_SCT()
 {
-	using namespace HW;
+	HW::GPIO->MASK0 = ~(0xF<<17);
+	HW::GPIO->MPIN0 = 0xF<<17;
 
-	static byte i = 0;
-
-	#define CALL(p) case (__LINE__-S): p; break;
-
-	enum C { S = (__LINE__+3) };
-	switch(i++)
-	{
-		CALL( fcurADC += (((ADC->DAT0&0xFFF0) * 1800 ) >> 16) - curADC;	curADC = fcurADC >> 3;	);
-		CALL( fvAP += (((ADC->DAT1&0xFFF0) * 3300) >> 16) - vAP; vAP = fvAP >> 3;	);
-	};
-
-//	i = (i > (__LINE__-S-3)) ? 0 : i;
-	i &= 1;
-
-	#undef CALL
+	HW::SCT->EVFLAG = 1<<3;
 }
 
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
-static void InitPWM()
+static void InitSCT()
 {
 	using namespace HW;
 
@@ -173,19 +183,17 @@ static void InitPWM()
 	SCT->MATCH_L[0] = US2CLK(1);		// LIN=0; HIN=1; DIS=0;
 	SCT->MATCH_L[1] = US2CLK(2.0416);	// LIN=1; HIN=0; DIS=0;
 	SCT->MATCH_L[2] = US2CLK(3.0833);	// LIN=0; HIN=0; DIS=0;
-	SCT->MATCH_L[3] = US2CLK(4.125);	// LIN=0; HIN=0; DIS=1;
-	SCT->MATCH_L[4] = US2CLK(5.1667);	// LIN=0; HIN=0; DIS=1;
-	SCT->MATCH_L[5] = US2CLK(20);		// LIN=0; HIN=0; DIS=1;
-	SCT->MATCH_L[6] = US2CLK(500);		// LIN=1; HIN=0; DIS=0;
+	SCT->MATCH_L[3] = US2CLK(5);		// LIN=0; HIN=0; DIS=1;
+	SCT->MATCH_L[4] = US2CLK(1000);		// LIN=0; HIN=0; DIS=0;
 
-	SCT->OUT[0].SET = (1<<1)|(1<<6);//|(1<<3);				// LIN
-	SCT->OUT[0].CLR = (1<<0)|(1<<2)|(1<<4)|(1<<5);
+	SCT->OUT[0].SET = (1<<1);							// LIN
+	SCT->OUT[0].CLR = (1<<0)|(1<<2)|(1<<3)|(1<<4);
 
-	SCT->OUT[1].SET = (1<<0);//|(1<<2);					// HIN
-	SCT->OUT[1].CLR = (1<<1)|(1<<3)|(1<<4)|(1<<5)|(1<<6);
+	SCT->OUT[1].SET = (1<<0);							// HIN
+	SCT->OUT[1].CLR = (1<<1)|(1<<2)|(1<<3)|(1<<4);
 
-	SCT->OUT[2].SET = (1<<5)|(1<<4)|(1<<3);						// DIS
-	SCT->OUT[2].CLR = (1<<0)|(1<<1)|(1<<2)|(1<<6);
+	SCT->OUT[2].SET = (1<<3);							// DIS
+	SCT->OUT[2].CLR = (1<<0)|(1<<1)|(1<<2)|(1<<4);
 
 	SCT->EVENT[0].STATE = 1;
 	SCT->EVENT[0].CTRL = (1<<5)|(0<<6)|(1<<12)|0;
@@ -203,18 +211,12 @@ static void InitPWM()
 	SCT->EVENT[4].CTRL = (1<<5)|(0<<6)|(1<<12)|4;
 
 	SCT->EVENT[5].STATE = 1;
-	SCT->EVENT[5].CTRL = (1<<5)|(0<<6)|(1<<12)|5;
+	SCT->EVENT[5].CTRL = (3<<10)|(2<<12);
 
-	SCT->EVENT[6].STATE = 1;
-	SCT->EVENT[6].CTRL = (1<<5)|(0<<6)|(1<<12)|6;
-
-	SCT->EVENT[7].STATE = 1;
-	SCT->EVENT[7].CTRL = (3<<10)|(2<<12);
-
-	SCT->START_L = 1<<7;
-	SCT->STOP_L = (1<<6);
+	SCT->START_L = 1<<5;
+	SCT->STOP_L = (1<<4);
 	SCT->HALT_L = 0;
-	SCT->LIMIT_L = 1<<6;
+	SCT->LIMIT_L = (1<<4);
 
 	SCT->CONFIG = 1<<7; 
 
@@ -225,32 +227,41 @@ static void InitPWM()
 	INPUTMUX->SCT0_INMUX0 = 0;
 	SWM->CTIN_0 = 0;
 
-	SCT->CTRL_L = (1<<3);
+//	SCT->OUTPUT = 1;
+	SCT->CTRL_L = (1<<3);//|(1<<2);
+
+
+	//VectorTableExt[SCT_IRQ] = Handler_SCT;
+	//CM0::NVIC->ICPR[0] = 1 << SCT_IRQ;
+	//CM0::NVIC->ISER[0] = 1 << SCT_IRQ;
+
+	//SCT->EVEN = 1<<3;
+	//SCT->EVFLAG = 1<<3;
 }
 
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
-static void InitADC()
-{
-	using namespace HW;
-
-	//SWM->PINASSIGN[3] = (SWM->PINASSIGN[3] & 0x00FFFFFF) | 0x09000000;
-	//SWM->PINASSIGN[4] = (SWM->PINASSIGN[4] & 0xFF000000) | 0x00100FFF;
-
-	SWM->PINENABLE0.B.ADC_0 = 0;
-	SWM->PINENABLE0.B.ADC_1 = 0;
-
-
-	SYSCON->PDRUNCFG &= ~(1<<4);
-	SYSCON->SYSAHBCLKCTRL |= CLK::ADC_M;
-
-	ADC->CTRL = (1<<30)|49;
-
-	while(ADC->CTRL & (1<<30));
-
-	ADC->CTRL = 24;
-	ADC->SEQA_CTRL = 3|(1UL<<31)|(1<<27);
-}
+//static void InitADC()
+//{
+//	using namespace HW;
+//
+//	//SWM->PINASSIGN[3] = (SWM->PINASSIGN[3] & 0x00FFFFFF) | 0x09000000;
+//	//SWM->PINASSIGN[4] = (SWM->PINASSIGN[4] & 0xFF000000) | 0x00100FFF;
+//
+//	SWM->PINENABLE0.B.ADC_0 = 0;
+//	SWM->PINENABLE0.B.ADC_1 = 0;
+//
+//
+//	SYSCON->PDRUNCFG &= ~(1<<4);
+//	SYSCON->SYSAHBCLKCTRL |= CLK::ADC_M;
+//
+//	ADC->CTRL = (1<<30)|49;
+//
+//	while(ADC->CTRL & (1<<30));
+//
+//	ADC->CTRL = 24;
+//	ADC->SEQA_CTRL = 3|(1UL<<31)|(1<<27);
+//}
 
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
@@ -333,7 +344,7 @@ static __irq void Handler_TWI()
 		twiWrite = write;
 		twiRead = read;
 
-		if (write)
+		if (read)
 		{
 			req.busy = true;
 			req.ready = false;
@@ -368,15 +379,17 @@ static void UpdateTWI()
 {
 	static byte i = 0;
 
-
 	switch (i)
 	{
 		case 0:
 
-			if (twiWrite)
+			if (twiRead)
 			{
-				req.busy = true;
-				req.ready = false;
+				HW::SCT->CTRL_L = 1<<2;
+				HW::SCT->OUTPUT = 0;
+
+				//HW::SCT->OUTPUT = 1;
+
 				i++;
 			};
 
@@ -384,9 +397,22 @@ static void UpdateTWI()
 
 		case 1:
 
+			HW::GPIO->MASK0 = ~(0xF<<17);
+			HW::GPIO->MPIN0 = req.chnl<<17;
+
+			i++;
+
+			break;
+
+		case 2:
+
+			HW::SCT->OUTPUT = 1;
+			HW::SCT->CTRL_L = 1<<1;
+
+			twiRead = false;
 			req.busy = false;
 			req.ready = true;
-			twiWrite = false;
+
 			i = 0;
 
 			break;
@@ -400,8 +426,8 @@ static void UpdateTWI()
 {
 	InitVectorTable();
 	Init_time();
-	InitADC();
-	InitPWM();
+//	InitADC();
+	InitSCT();
 	InitTWI();
 }
 
@@ -409,21 +435,23 @@ static void UpdateTWI()
 
 void UpdateHardware()
 {
-	static byte i = 0;
+	UpdateTWI();
 
-	static TM32 tm;
+	//static byte i = 0;
+
+	//static TM32 tm;
 
 
-	#define CALL(p) case (__LINE__-S): p; break;
+	//#define CALL(p) case (__LINE__-S): p; break;
 
-	enum C { S = (__LINE__+3) };
-	switch(i++)
-	{
-		CALL( UpdateADC() );
-		CALL( UpdateTWI() );
-	};
+	//enum C { S = (__LINE__+3) };
+	//switch(i++)
+	//{
+	//	CALL( UpdateADC() );
+	//	CALL( UpdateTWI() );
+	//};
 
-	i = (i > (__LINE__-S-3)) ? 0 : i;
+	//i = (i > (__LINE__-S-3)) ? 0 : i;
 }
 
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++

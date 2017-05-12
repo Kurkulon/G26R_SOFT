@@ -32,38 +32,38 @@ int main()
 	{
 		UpdateHardware();
 
-		switch(i)
-		{
-			case 0:
-
-				HW::GPIO->MASK0 = ~(0xF<<17);
-				HW::GPIO->MPIN0 = adr<<17;
-
-				i++;
-
-				break;
-
-			case 1:
-
-//				HW::SCT->CTRL_L = (1<<3);
-
-				i++;
-
-				break;
-
-			case 2:
-
-				if (tm.Check(3))
-				{
+//		switch(i)
+//		{
+//			case 0:
+//
+				//HW::GPIO->MASK0 = ~(0xF<<17);
+				//HW::GPIO->MPIN0 = adr<<17;
+//
+//				i++;
+//
+//				break;
+//
+//			case 1:
+//
+////				HW::SCT->CTRL_L = (1<<3);
+//
+//				i++;
+//
+//				break;
+//
+//			case 2:
+//
+//				if (tm.Check(3))
+//				{
 //					adr += 1;
 
-					if (adr > 12) adr = 0;
-
-					i = 0;
-				};
-
-				break;
-		};
+//					if (adr > 12) adr = 0;
+//
+//					i = 0;
+//				};
+//
+//				break;
+//		};
 
 		HW::GPIO->NOT0 = 1<<12;
 

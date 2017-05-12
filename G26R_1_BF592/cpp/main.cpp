@@ -28,8 +28,8 @@ struct Cmd
 	byte ready; 
 };
 
-static Cmd req = {0, 0, 52, 255, 25*2000, 0, 0, 0};
-static Cmd rsp;
+static Cmd cmdreq = {0, 0, 52, 255, 25*2000, 0, 0, 0};
+static Cmd cmdrsp;
 
 //static u16 spd2[512*2];
 //
@@ -57,7 +57,7 @@ static u32 manCounter = 0;
 
 static bool startFire = false;
 
-static u16 sampleDelay = 800;
+static u16 sampleDelay = 0;//800;
 static u16 sampleTime = 8;
 static u16 gain = 0;
 
@@ -72,7 +72,9 @@ static void UpdateFire()
 	static bool ready = false;
 	static RTM32 tm;
 
+	static byte count = 0;
 	static byte fnum = 0;
+
 
 	Req30 &req = req30[fnum];
 
@@ -89,6 +91,8 @@ static void UpdateFire()
 
 				SetGain(gain);
 
+				tm.Reset();
+
 				i++;
 			};
 
@@ -96,7 +100,11 @@ static void UpdateFire()
 
 		case 1:
 
-			WriteTWI(&req, sizeof(req));
+			cmdreq.chnl = fnum;
+
+			WriteTWI(&cmdreq, sizeof(cmdreq));
+
+			count = 10;
 
 			i++;
 
@@ -106,7 +114,7 @@ static void UpdateFire()
 
 			if ((*pTWI_MASTER_CTL & MEN) == 0)
 			{
-				ReadTWI(&rsp, sizeof(rsp));
+				ReadTWI(&cmdrsp, sizeof(cmdrsp));
 
 				i++;
 			};
@@ -117,7 +125,14 @@ static void UpdateFire()
 
 			if ((*pTWI_MASTER_CTL & MEN) == 0)
 			{
-				i = (rsp.busy || !rsp.ready) ? (i-1) : (i+1);
+				if ((count--) == 0)
+				{
+					i = 1;
+				}
+				else
+				{
+					i = (cmdrsp.busy || !cmdrsp.ready) ? (i-1) : (i+1);
+				};
 			};
 
 			break;
@@ -125,6 +140,7 @@ static void UpdateFire()
 		case 4:
 
 			ReadPPI(req.data, sizeof(req.data), sampleTime*4, (u32)sampleDelay*4, &ready);
+
 
 			i++;
 
@@ -148,6 +164,15 @@ static void UpdateFire()
 				req.sd = sampleDelay;
 				req.flt = 0;
 
+				i++;
+			};
+
+			break;
+
+		case 6:
+
+			if (tm.Check(US2CLK(10000)))
+			{
 				fnum++;
 				
 				i = (fnum < 13) ? 1 : 0;
@@ -480,9 +505,18 @@ int main( void )
 	{
 		*pPORTFIO_TOGGLE = 1<<8;
 
-		UpdateFire();
+		#define CALL(p) case (__LINE__-S): p; break;
 
-		UpdateBlackFin();
+		enum C { S = (__LINE__+3) };
+		switch(i++)
+		{
+			CALL( UpdateFire()		);
+			CALL( UpdateBlackFin()	);
+		};
+
+		i &= 1; // i = (i > (__LINE__-S-3)) ? 0 : i;
+
+		#undef CALL
 
 		//if (tm.Check(MS2CLK(100)))
 		//{
