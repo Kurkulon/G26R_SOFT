@@ -6,7 +6,7 @@
 #define CLKIN 25000000
 #define VRCTL_VALUE         0x0000
 #define PLLCTL_VALUE        0x2000
-#define PLLDIV_VALUE        0x0025
+#define PLLDIV_VALUE        0x0024
 #define PLLLOCKCNT_VALUE    0x0000
 #define PLLSTAT_VALUE       0x0000
 #define RSICLK_DIV          0x0001

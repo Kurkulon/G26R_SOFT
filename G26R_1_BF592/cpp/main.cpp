@@ -57,8 +57,8 @@ static u32 manCounter = 0;
 
 static bool startFire = false;
 
-static u16 sampleDelay = 0;//800;
-static u16 sampleTime = 8;
+static u16 sampleDelay = 600;//800;
+static u16 sampleTime = 2;
 static u16 gain = 0;
 
 
@@ -139,7 +139,7 @@ static void UpdateFire()
 
 		case 4:
 
-			ReadPPI(req.data, sizeof(req.data), sampleTime*4, (u32)sampleDelay*4, &ready);
+			ReadPPI(req.data, sizeof(req.data), sampleTime, sampleDelay, &ready);
 
 
 			i++;
@@ -152,9 +152,15 @@ static void UpdateFire()
 			{
 				u16 *p = req.data;
 
-				for (u16 j = ArraySize(req.data); j > 0; j--)
+				for (u16 j = ArraySize(req.data)-7; j > 0; j--)
 				{
-					*p++ -= 2048;
+					*p = p[7] - 2048;
+					p++;
+				};
+
+				for (u16 j = 7; j > 0; j--)
+				{
+					*p++ = 0;
 				};
 
 				req.rw = manReqWord + 0x30 + fnum;

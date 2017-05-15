@@ -109,8 +109,9 @@ void ReadPPI(void *dst, u16 len, u16 clkdiv, u32 delay, bool *ready)
 	*pPPI_CONTROL = 0;
 	*pDMA0_CONFIG = 0;
 
+	clkdiv = clkdiv * 5;
+
 	if (clkdiv < 5) { clkdiv = 5; };
-	if (delay < 1) { delay = 1; };
 
 	*pTIMER_DISABLE = TIMDIS1;
 	*pTIMER1_CONFIG = PERIOD_CNT|PWM_OUT;
@@ -121,14 +122,21 @@ void ReadPPI(void *dst, u16 len, u16 clkdiv, u32 delay, bool *ready)
 	*pDMA0_X_COUNT = len/2;
 	*pDMA0_X_MODIFY = 2;
 
-//	*pPPI_COUNT = len/2 - 1;
-	//*pDMA0_CONFIG = FLOW_STOP|DI_EN|WDSIZE_16|SYNC|WNR|DMAEN;
-	//*pPPI_CONTROL = FLD_SEL|PORT_CFG|POLC|DLEN_12|XFR_TYPE|PORT_EN;
-	//*pTIMER_ENABLE = TIMEN1;
+//	delay = delay * 5 / 4;
 
-	*pTSCALE = 0;
-	*pTCOUNT = delay;
-	*pTCNTL = TINT|TMPWR|TMREN;
+	if (delay == 0)
+	{ 
+		*pTCNTL = 0;
+		*pDMA0_CONFIG = FLOW_STOP|DI_EN|WDSIZE_16|SYNC|WNR|DMAEN;
+		*pPPI_CONTROL = FLD_SEL|PORT_CFG|POLC|DLEN_12|XFR_TYPE|PORT_EN;
+		*pTIMER_ENABLE = TIMEN1;
+	}
+	else
+	{
+		*pTSCALE = 4;
+		*pTCOUNT = delay;
+		*pTCNTL = TINT|TMPWR|TMREN;
+	};
 
 	*pPORTFIO_SET = 1<<9; // SYNC 
 }
