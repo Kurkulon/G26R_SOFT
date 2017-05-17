@@ -26,4 +26,7 @@
 
 #include "bf592.h"
 
+inline void ResetWDT() { *pWDOG_STAT = 0;}
+
+
 #endif // CORE_H__05_12_12__16_12

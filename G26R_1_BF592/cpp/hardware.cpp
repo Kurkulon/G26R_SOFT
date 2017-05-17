@@ -119,7 +119,7 @@ void ReadPPI(void *dst, u16 len, u16 clkdiv, u32 delay, bool *ready)
 	*pTIMER1_WIDTH = clkdiv>>1;
 
 	*pDMA0_START_ADDR = dst;
-	*pDMA0_X_COUNT = len/2;
+	*pDMA0_X_COUNT = len;
 	*pDMA0_X_MODIFY = 2;
 
 //	delay = delay * 5 / 4;
@@ -253,6 +253,9 @@ static void LowLevelInit()
 
 	*pPORTGIO = 0;
 	*pPORTFIO = 0;
+
+	//*pWDOG_CNT = MS2CLK(10);
+	//*pWDOG_CTL = WDEV_RESET|WDEN;
 }
 
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++

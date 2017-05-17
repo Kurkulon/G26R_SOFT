@@ -42,6 +42,7 @@ inline bool fIsValid(float v) { return (((u16*)&v)[2] & 0x7F80) != 0x7F80; }
 inline bool dIsValid(float v) { return (((u32*)&v)[2] & 0x7FF0) != 0x7FF0; }
 
 #define GD(adr, t, i) (*(((t*)adr)+i))
+#define GB(adr,i) (*(((byte*)adr)+i))
 
 
 //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++

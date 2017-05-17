@@ -1,6 +1,7 @@
 #include "hardware.h"
 #include "ComPort.h"
 #include "CRC16.h"
+#include "at25df021.h"
 
 
 static ComPort com;
@@ -50,18 +51,20 @@ static Cmd cmdrsp;
 static u16 manReqWord = 0xA900;
 static u16 manReqMask = 0xFF00;
 
-static u16 numDevice = 0;
-static u16 verDevice = 1;
+static u16 numDevice = 1;
+static u16 verDevice = 0x101;
 
 static u32 manCounter = 0;
 
 static bool startFire = false;
 
 static u16 sampleDelay = 600;//800;
-static u16 sampleTime = 2;
+static u16 sampleTime = 8;
+static u16 sampleLen = 512;
 static u16 gain = 0;
 
 
+static void SaveParams();
 
 
 //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -139,8 +142,13 @@ static void UpdateFire()
 
 		case 4:
 
-			ReadPPI(req.data, sizeof(req.data), sampleTime, sampleDelay, &ready);
+			{
+				i32 d = (i32)sampleDelay - (i32)sampleTime*2;
 
+				if (d < 0) d = 0;
+
+				ReadPPI(req.data, ArraySize(req.data), sampleTime, d, &ready);
+			};
 
 			i++;
 
@@ -152,13 +160,13 @@ static void UpdateFire()
 			{
 				u16 *p = req.data;
 
-				for (u16 j = ArraySize(req.data)-7; j > 0; j--)
+				for (u16 j = ArraySize(req.data)-8; j > 0; j--)
 				{
-					*p = p[7] - 2048;
+					*p = p[8] - 2048;
 					p++;
 				};
 
-				for (u16 j = 7; j > 0; j--)
+				for (u16 j = 8; j > 0; j--)
 				{
 					*p++ = 0;
 				};
@@ -166,7 +174,7 @@ static void UpdateFire()
 				req.rw = manReqWord + 0x30 + fnum;
 				req.gain = gain;
 				req.st = sampleTime;
-				req.sl = 1024;
+				req.sl = sampleLen;
 				req.sd = sampleDelay;
 				req.flt = 0;
 
@@ -177,7 +185,7 @@ static void UpdateFire()
 
 		case 6:
 
-			if (tm.Check(US2CLK(10000)))
+			if (tm.Check(US2CLK(2000)))
 			{
 				fnum++;
 				
@@ -221,7 +229,7 @@ static bool RequestMan_10(u16 *data, u16 len, ComPort::WriteBuffer *wb)
 	rsp[0] = manReqWord|0x10;	// 	1. ответное слово
 	rsp[1] = gain;				//	2. КУ
 	rsp[2] = sampleTime;		//	3. Шаг оцифровки
-	rsp[3] = 512;			 	//	4. Длина оцифровки
+	rsp[3] = sampleLen;			//	4. Длина оцифровки
 	rsp[4] = sampleDelay;		//	5. Задержка оцифровки
 	rsp[5] = 0;					//	6. Фильтр
 
@@ -286,8 +294,8 @@ static bool RequestMan_30(u16 *data, u16 len, ComPort::WriteBuffer *wb)
 	//req.flt = 0;					//	6. Фильтр
 //	rsp[6] = 0;					//	7-?. данные (до 2048шт)
 
-	wb->data = &req30[num];
-	wb->len = sizeof(req30[num]);
+	wb->data = &req;
+	wb->len = req.sl*2 + sizeof(req) - sizeof(req.data);
 
 	return true;
 }
@@ -342,6 +350,8 @@ static bool RequestMan_90(u16 *data, u16 len, ComPort::WriteBuffer *wb)
 
 		case 3:
 
+			sampleLen = data[2];
+
 			break;
 
 		case 4:
@@ -372,7 +382,7 @@ static bool RequestMan_F0(u16 *data, u16 len, ComPort::WriteBuffer *wb)
 
 	if (wb == 0) return false;
 
-//	SaveParams();
+	SaveParams();
 
 	rsp[0] = manReqWord|0xF0;
  
@@ -426,6 +436,8 @@ static void UpdateBlackFin()
 	static ComPort::ReadBuffer rb;
 	static byte buf[1024];
 
+	ResetWDT();
+
 	switch(i)
 	{
 		case 0:
@@ -472,23 +484,74 @@ static void UpdateBlackFin()
 	};
 }
 
-////+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-//
-//static void InitNetAdress()
-//{
-//	U32u f;
-//	
-//	f.w[1] = ReadADC();
-//
-//	u32 t = GetRTT();
-//
-//	while ((GetRTT()-t) < 1000000)
-//	{
-//		f.d += (i32)ReadADC() - (i32)f.w[1];
-//	};
-//
-//	netAdr = (f.w[1] / 398) + 1;
-//}
+//+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+static void SaveParams()
+{
+	u16 buf[12];
+
+	ERROR_CODE result;
+
+	buf[0] = buf[6] = sampleDelay;
+	buf[1] = buf[7] = sampleTime;
+	buf[2] = buf[8] = sampleLen;
+	buf[3] = buf[9] = gain;
+	buf[4] = buf[10] = numDevice;
+	buf[5] = buf[11] = GetCRC16(buf, 10);
+
+	result = EraseBlock(0x20000);
+
+	result = at25df021_Write((byte*)buf, 0x20000, sizeof(buf), false);
+}
+
+//+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+static void LoadParams()
+{
+	u16 buf[10];
+
+	ERROR_CODE result;
+
+	result = at25df021_Read((byte*)buf, 0x20000, sizeof(buf));
+
+	bool crc = false;
+
+	if (result == NO_ERR)
+	{
+		u16 *p = buf;
+
+		for (byte i = 0; i < 2; i++)
+		{
+			if (GetCRC16(p, 12) == 0)
+			{
+				sampleDelay = p[0];
+				sampleTime = p[1];
+				sampleLen = p[2];
+				gain = p[3];
+				numDevice = p[4];
+
+				crc = true;
+
+				break;
+			}
+			else
+			{
+				p += 6;
+			};
+		};
+	};
+
+	if(!crc)
+	{
+		sampleDelay = 600;
+		sampleTime = 8;
+		sampleLen = 512;
+		gain = 0;
+		numDevice = 1;
+
+		SaveParams();
+	};
+}
 
 //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
@@ -502,6 +565,8 @@ int main( void )
 	static RTM32 tm;
 
 	InitHardware();
+
+	LoadParams();
 
 	com.Connect(1000000, 2);
 
