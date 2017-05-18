@@ -333,12 +333,11 @@ static bool RequestMan_90(u16 *data, u16 len, ComPort::WriteBuffer *wb)
 
 	if (wb == 0 || len < 3) return false;
 
-
 	switch (data[1])
 	{
 		case 1:
 
-			gain = data[2];
+			gain = data[2] & 0xF;
 
 			break;
 
@@ -351,6 +350,15 @@ static bool RequestMan_90(u16 *data, u16 len, ComPort::WriteBuffer *wb)
 		case 3:
 
 			sampleLen = data[2];
+
+			if (sampleLen < 64)
+			{
+				sampleLen = 64;
+			}
+			else if (sampleLen > 1024)
+			{
+				sampleLen = 1024;
+			};
 
 			break;
 
@@ -406,6 +414,8 @@ static bool RequestMan(ComPort::WriteBuffer *wb, ComPort::ReadBuffer *rb)
 //		bfERC++; 
 		return false;
 	};
+
+	manCounter += 1;
 
 	u16 len = (rb->len)>>1;
 

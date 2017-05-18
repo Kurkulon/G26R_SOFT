@@ -254,8 +254,8 @@ static void LowLevelInit()
 	*pPORTGIO = 0;
 	*pPORTFIO = 0;
 
-	//*pWDOG_CNT = MS2CLK(10);
-	//*pWDOG_CTL = WDEV_RESET|WDEN;
+	*pWDOG_CNT = MS2CLK(10);
+	*pWDOG_CTL = WDEV_RESET|WDEN;
 }
 
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++

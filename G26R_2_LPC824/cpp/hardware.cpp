@@ -107,7 +107,9 @@ extern "C" void SystemInit()
 	using namespace CM0;
 	using namespace HW;
 
-	SYSCON->SYSAHBCLKCTRL |= CLK::SWM_M | CLK::IOCON_M | CLK::GPIO_M | HW::CLK::MRT_M | HW::CLK::CRC_M;
+	SYSCON->SYSAHBCLKCTRL |= CLK::SWM_M | CLK::IOCON_M | CLK::GPIO_M | HW::CLK::MRT_M | HW::CLK::CRC_M | HW::CLK::WWDT_M;
+
+	SYSCON->PDRUNCFG &= ~(1<<6); // WDTOSC_PD = 0
 
 	GPIO->DIRSET0 = (1<<17)|(1<<18)|(1<<19)|(1<<20)|(1<<22)|(1<<12)|(1<<13)|(1<<16);
 	GPIO->CLR0 = (1<<13)|(1<<22);
@@ -161,13 +163,13 @@ extern "C" void SystemInit()
 
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
-static __irq void Handler_SCT()
-{
-	HW::GPIO->MASK0 = ~(0xF<<17);
-	HW::GPIO->MPIN0 = 0xF<<17;
-
-	HW::SCT->EVFLAG = 1<<3;
-}
+//static __irq void Handler_SCT()
+//{
+//	HW::GPIO->MASK0 = ~(0xF<<17);
+//	HW::GPIO->MPIN0 = 0xF<<17;
+//
+//	HW::SCT->EVFLAG = 1<<3;
+//}
 
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
@@ -422,13 +424,23 @@ static void UpdateTWI()
 
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
-	void InitHardware()
+void InitHardware()
 {
+	using namespace HW;
+
 	InitVectorTable();
 	Init_time();
 //	InitADC();
 	InitSCT();
 	InitTWI();
+
+	SYSCON->SYSAHBCLKCTRL |= HW::CLK::WWDT_M;
+	SYSCON->PDRUNCFG &= ~(1<<6); // WDTOSC_PD = 0
+	SYSCON->WDTOSCCTRL = (1<<5)|1; 
+
+	WDT->TC = 0x1FF;
+	WDT->MOD = 0x3;
+	ResetWDT();
 }
 
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -436,6 +448,8 @@ static void UpdateTWI()
 void UpdateHardware()
 {
 	UpdateTWI();
+
+	HW::ResetWDT();
 
 	//static byte i = 0;
 
