@@ -117,6 +117,10 @@
       <TargetDriverDllRegistry>
         <SetRegEntry>
           <Number>0</Number>
+          <Key>DLGUARM</Key>
+        </SetRegEntry>
+        <SetRegEntry>
+          <Number>0</Number>
           <Key>ARMRTXEVENTFLAGS</Key>
           <Name>-L50 -Z18 -C0 -M0 -T0</Name>
         </SetRegEntry>
@@ -133,7 +137,7 @@
         <SetRegEntry>
           <Number>0</Number>
           <Key>JL2CM3</Key>
-          <Name>-U59103019 -O111 -S2 -ZTIFSpeedSel5000 -A0 -C0 -JU1 -JI127.0.0.1 -JP0 -RST0 -N00("ARM CoreSight SW-DP") -D00(0BC11477) -L00(0) -TO18 -TC10000000 -TP21 -TDS8001 -TDT0 -TDC1F -TIEFFFFFFFF -TIP8 -TB1 -TFE0 -FO4 -FD10000000 -FCFE0 -FN1 -FF0LPC8xx_32.FLM -FS00 -FL08000 -FP0($$Device:LPC824M201JHI33$Flash\LPC8xx_32.FLM)</Name>
+          <Name>-U59103019 -O111 -S2 -ZTIFSpeedSel5000 -A0 -C0 -JU1 -JI127.0.0.1 -JP0 -RST0 -N00("ARM CoreSight SW-DP") -D00(0BC11477) -L00(0) -TO18 -TC10000000 -TP21 -TDS8001 -TDT0 -TDC1F -TIEFFFFFFFF -TIP8 -TB1 -TFE0 -FO7 -FD10000000 -FCFE0 -FN1 -FF0LPC8xx_32.FLM -FS00 -FL08000 -FP0($$Device:LPC824M201JHI33$Flash\LPC8xx_32.FLM)</Name>
         </SetRegEntry>
         <SetRegEntry>
           <Number>0</Number>
@@ -141,7 +145,40 @@
           <Name>UL2CM3(-S0 -C0 -P0 -FD10000000 -FCFE0 -FN1 -FF0LPC8xx_32 -FS00 -FL08000 -FP0($$Device:LPC824M201JHI33$Flash\LPC8xx_32.FLM))</Name>
         </SetRegEntry>
       </TargetDriverDllRegistry>
-      <Breakpoint/>
+      <Breakpoint>
+        <Bp>
+          <Number>0</Number>
+          <Type>0</Type>
+          <LineNumber>20</LineNumber>
+          <EnabledFlag>1</EnabledFlag>
+          <Address>240</Address>
+          <ByteObject>0</ByteObject>
+          <HtxType>0</HtxType>
+          <ManyObjects>0</ManyObjects>
+          <SizeOfObject>0</SizeOfObject>
+          <BreakByAccess>0</BreakByAccess>
+          <BreakIfRCount>1</BreakIfRCount>
+          <Filename>d:\Work\G26R_SOFT\G26R_2_LPC824\cpp\main.cpp</Filename>
+          <ExecCommand></ExecCommand>
+          <Expression>\\G26RLPC824\cpp/main.cpp\20</Expression>
+        </Bp>
+        <Bp>
+          <Number>1</Number>
+          <Type>0</Type>
+          <LineNumber>110</LineNumber>
+          <EnabledFlag>1</EnabledFlag>
+          <Address>830</Address>
+          <ByteObject>0</ByteObject>
+          <HtxType>0</HtxType>
+          <ManyObjects>0</ManyObjects>
+          <SizeOfObject>0</SizeOfObject>
+          <BreakByAccess>0</BreakByAccess>
+          <BreakIfRCount>1</BreakIfRCount>
+          <Filename>d:\Work\G26R_SOFT\G26R_2_LPC824\cpp\hardware.cpp</Filename>
+          <ExecCommand></ExecCommand>
+          <Expression>\\G26RLPC824\cpp/hardware.cpp\110</Expression>
+        </Bp>
+      </Breakpoint>
       <WatchWindow1>
         <Ww>
           <count>0</count>
@@ -225,7 +262,7 @@
       <DebugFlag>
         <trace>0</trace>
         <periodic>1</periodic>
-        <aLwin>1</aLwin>
+        <aLwin>0</aLwin>
         <aCover>0</aCover>
         <aSer1>0</aSer1>
         <aSer2>0</aSer2>

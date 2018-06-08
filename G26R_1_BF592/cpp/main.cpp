@@ -510,45 +510,61 @@ static void SaveParams()
 	buf[5] = buf[11] = GetCRC16(buf, 10);
 
 	result = EraseBlock(0x20000);
-
 	result = at25df021_Write((byte*)buf, 0x20000, sizeof(buf), false);
+
+	result = EraseBlock(0x21000);
+	result = at25df021_Write((byte*)buf, 0x21000, sizeof(buf), false);
+
+	result = EraseBlock(0x22000);
+	result = at25df021_Write((byte*)buf, 0x22000, sizeof(buf), false);
+
+	result = EraseBlock(0x23000);
+	result = at25df021_Write((byte*)buf, 0x23000, sizeof(buf), false);
 }
 
 //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 static void LoadParams()
 {
-	u16 buf[10];
+	u16 buf[12];
 
 	ERROR_CODE result;
 
-	result = at25df021_Read((byte*)buf, 0x20000, sizeof(buf));
+	u32 stAdr = 0x20000;
+
 
 	bool crc = false;
 
-	if (result == NO_ERR)
+	for (byte n = 0; n < 4; n++, stAdr += 0x1000)
 	{
-		u16 *p = buf;
+		result = at25df021_Read((byte*)buf, stAdr, sizeof(buf));
 
-		for (byte i = 0; i < 2; i++)
+		if (result == NO_ERR)
 		{
-			if (GetCRC16(p, 12) == 0)
-			{
-				sampleDelay = p[0];
-				sampleTime = p[1];
-				sampleLen = p[2];
-				gain = p[3];
-				numDevice = p[4];
+			u16 *p = buf;
 
-				crc = true;
-
-				break;
-			}
-			else
+			for (byte i = 0; i < 2; i++)
 			{
-				p += 6;
+				if (GetCRC16(p, 12) == 0)
+				{
+					sampleDelay = p[0];
+					sampleTime = p[1];
+					sampleLen = p[2];
+					gain = p[3];
+					numDevice = p[4];
+
+					crc = true;
+
+					break;
+				}
+				else
+				{
+					p += 6;
+				};
 			};
 		};
+
+		if (crc) break;
 	};
 
 	if(!crc)
