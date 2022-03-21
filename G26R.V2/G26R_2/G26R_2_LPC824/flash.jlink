@@ -1,0 +1,7 @@
+SWDSelect
+speed 2000
+r
+h
+exec device = LPC824M201
+loadbin obj\G26RLPC824.bin,0x00000000
+exit
