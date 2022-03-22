@@ -1,5 +1,5 @@
-#pragma O3
-#pragma Ospace
+//#pragma O3
+//#pragma Ospace
 
 #include "types.h"
 #include "core.h"
@@ -480,7 +480,7 @@ extern "C" void SystemInit()
 		HW::PIOA->DIRSET = (1<<25)|(1<<24)|(1<<21);
 		HW::PIOA->CLR((1<<25)|(1<<24)|(1<<21));
 
-		PIO_MEM_USART->SetWRCONFIG(MEM_TXD|MEM_RXD|MEM_SCK, PORT_PMUX(3)|PORT_WRPINCFG|PORT_PMUXEN|PORT_WRPMUX|PORT_PULLEN);
+		//PIO_MEM_USART->SetWRCONFIG(MEM_TXD|MEM_RXD|MEM_SCK, PORT_PMUX(3)|PORT_WRPINCFG|PORT_PMUXEN|PORT_WRPMUX|PORT_PULLEN);
 
 		HW::PIOB->DIRSET = (1<<18)|(1<<20)|(1<<21);
 		//HW::PIOB->SetWRCONFIG((1<<17), PORT_PMUX(11)|PORT_WRPINCFG|PORT_PMUXEN|PORT_WRPMUX;

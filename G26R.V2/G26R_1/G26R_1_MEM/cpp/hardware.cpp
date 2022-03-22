@@ -108,14 +108,15 @@ static void I2C_Init();
 	#define GEN_1M		3
 	//#define GEN_500K	4
 
-	#define	NAND_DMACH		0
-	#define	COM1_DMACH		1
-	#define	COM2_DMACH		2
-	#define	COM3_DMACH		3
-	#define	SPI_DMACH_TX	4
-	#define	SPI_DMACH_RX	5
-	#define	DSP_DMACH		30
-	#define	CRC_DMACH		31
+	#define	NAND_DMACH			0
+	#define	COM1_DMACH			1
+	#define	COM2_DMACH			2
+	#define	COM3_DMACH			3
+	#define	SPI_DMACH_TX		4
+	#define	SPI_DMACH_RX		5
+	#define	NAND_MEMCOPY_DMACH	6
+	#define	DSP_DMACH			30
+	#define	CRC_DMACH			31
 
 	#define I2C			HW::I2C3
 	#define PIO_I2C		HW::PIOA 

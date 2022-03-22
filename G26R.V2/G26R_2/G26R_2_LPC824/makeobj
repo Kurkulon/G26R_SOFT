@@ -34,6 +34,10 @@ libsuffix=r
 
 ##################################################################################################
 
+target_name = G26R_2_LPC824
+
+##################################################################################################
+
 libname = $(libdir)\LPC824_$(libsuffix).a
 
 ##################################################################################################
@@ -67,7 +71,7 @@ compiler_options = $(debug_compiler_options) --asm -g -c --cpu=CORTEX-M0plus --t
 
 ##################################################################################################
 
-asm_options = --cpu CORTEX-M0plus -g --apcs /interwork --xref --diag_style=ide --pd "__MICROLIB SETA 1"
+asm_options = --cpu CORTEX-M0plus -g --apcs /interwork --xref --diag_style=ide --pd "__MICROLIB SETA 1" --pd "__PROGNAME__ SETS \"BOOT G26K.2(AS76C_MOTOR)-2.1\"" --cpreproc
 
 ##################################################################################################
 
@@ -80,7 +84,7 @@ link_options = --cpu CORTEX-M0plus --bestdebug --strict --map --xref --callgraph
 
 ##################################################################################################
 
-$(objdir)\G26RLPC824.axf : $(objdir)\startup_LPC82x.o $(modules_obj)
+$(objdir)\$(target_name).axf : $(objdir)\startup_LPC82x.o $(modules_obj)
 	@echo Linking ...
 	@$(bindir)\armlink	$(link_options) &
 	--feedback "$^*.fed" &

@@ -10,6 +10,9 @@
 
 #define MCK 25000000
 
+#define US2CLK(x) ((u32)(x*1.0*MCK/1e6+0.5))
+#define NS2CLK(x) ((u32)(x*1.0*MCK/1e9+0.5))
+
 #pragma anon_unions
 
 #ifndef WIN32
@@ -565,9 +568,9 @@ namespace T_HW
 
 	//++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
-#define CONFIG_SCT_nEV   (6)             /* Number of events */
-#define CONFIG_SCT_nRG   (5)             /* Number of match/compare registers */
-#define CONFIG_SCT_nOU   (4)             /* Number of outputs */
+#define CONFIG_SCT_nEV   (8)             /* Number of events */
+#define CONFIG_SCT_nRG   (8)             /* Number of match/compare registers */
+#define CONFIG_SCT_nOU   (5)             /* Number of outputs */
 
 	struct S_SCT
 	{

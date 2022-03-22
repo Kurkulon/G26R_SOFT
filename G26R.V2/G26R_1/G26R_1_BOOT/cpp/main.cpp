@@ -11,6 +11,8 @@
 #include "emac.h"
 #include "tftp.h"
 
+#include "SEGGER_RTT.h"
+
 #pragma diag_suppress 546,550,177
 
 #define US2CLK(x) ((x)*(MCK/1000000))
@@ -652,48 +654,6 @@ static bool HandShake()
 
 	while (!tm.Check(200) && !c)
 	{
-		//HW::WDT->Update();
-
-		//switch (i)
-		//{
-		//	case 0:
-
-		//		com.Read(&rb, MS2RT(100), US2RT(500));
-
-		//		i++;
-
-		//		break;
-
-		//	case 1:
-
-		//		if (!com.Update())
-		//		{
-		//			if (rb.recieved && rb.len == sizeof(RspHS) && GetCRC16(rb.data, rb.len) == 0 && rsp.guid == masterGUID)
-		//			{
-		//				com.Write(&wb);
-
-		//				i++;
-		//			}
-		//			else
-		//			{
-		//				i = 0;
-		//			};
-		//		};
-
-		//		break;
-
-		//	case 2:
-
-		//		if (!com.Update())
-		//		{
-		//			runCom = c = true;
-
-		//			timeOut.Reset();
-		//		};
-
-		//		break;
-		//};
-
 		UpdateEMAC();
 
 		if (EmacIsEnergyDetected() && EmacIsCableNormal())
@@ -949,6 +909,10 @@ int main()
 {
 	//__breakpoint(0);
 
+	SEGGER_RTT_WriteString(0, RTT_CTRL_CLEAR);
+
+	SEGGER_RTT_printf(0, RTT_CTRL_TEXT_BRIGHT_YELLOW "Bootloader Start ... %u ms\n", GetMilliseconds());
+
 	ResetPHY();
 
 	Init_time();
@@ -963,7 +927,7 @@ int main()
 
 	//HW::SCU_RESET->ResetEnable(PID_WDT); HW::SCU_CLK->CLKCLR = SCU_CLK_CLKCLR_WDTCDI_Msk; HW::SCU_CLK->ClockDisable(PID_WDT);
 
-	while(/*runCom || */runEmac)
+	while(runEmac)
 	{
 
 #ifdef CPU_SAME53
@@ -974,22 +938,13 @@ int main()
 
 		UpdateWriteFlash();
 
-		if (runCom)
-		{
-//			UpdateCom();
-		}
-		else
-		{
-			UpdateEMAC();
-			runEmac = TFTP_Idle();
+		UpdateEMAC();
+		runEmac = TFTP_Idle();
 
-			if (!TFTP_Connected() && timeOut.Check(10000))
-			{
-				runEmac = false;
-			};
+		if (!TFTP_Connected() && timeOut.Check(10000))
+		{
+			runEmac = false;
 		};
-
-		//HW::WDT->Update();
 
 #ifdef CPU_SAME53
 #elif defined(CPU_XMC48)
@@ -1020,6 +975,10 @@ int main()
 	HW::Peripheral_Disable(PID_USIC0);
 	HW::Peripheral_Disable(PID_USIC1);
 #endif
+
+	SEGGER_RTT_printf(0, RTT_CTRL_TEXT_BRIGHT_GREEN "Main App Start ... %u ms\n", GetMilliseconds());
+
+	__breakpoint(0);
 
 	_MainAppStart(FLASH_START);
 
