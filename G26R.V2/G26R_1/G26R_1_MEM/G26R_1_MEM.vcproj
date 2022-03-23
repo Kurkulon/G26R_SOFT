@@ -152,6 +152,14 @@
 				>
 			</File>
 			<File
+				RelativePath=".\cpp\SEGGER_RTT.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\cpp\SEGGER_RTT_printf.cpp"
+				>
+			</File>
+			<File
 				RelativePath=".\cpp\trap.cpp"
 				>
 			</File>
@@ -211,6 +219,14 @@
 			</File>
 			<File
 				RelativePath=".\cpp\rtc.h"
+				>
+			</File>
+			<File
+				RelativePath=".\cpp\SEGGER_RTT.h"
+				>
+			</File>
+			<File
+				RelativePath=".\cpp\SEGGER_RTT_Conf.h"
 				>
 			</File>
 			<File

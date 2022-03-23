@@ -660,6 +660,8 @@ static bool HandShake()
 		{
 			runEmac = c = true;
 			timeOut.Reset();
+			
+			SEGGER_RTT_printf(0, RTT_CTRL_TEXT_BRIGHT_GREEN "Emac connected - %u ms\n", GetMilliseconds());
 		};
 	};
 

@@ -255,7 +255,7 @@ extern u16 GetNumDevice()
 
 static void Update_RPS_SPR()
 {
-	Set_Sync_Rot(motoTargetRPS, (mode == 0) ? mv.cmSPR : mv.imSPR);
+//	Set_Sync_Rot(motoTargetRPS, (mode == 0) ? mv.cmSPR : mv.imSPR);
 }
 
 //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -1088,8 +1088,8 @@ static u32 InitRspMan_20(__packed u16 *data)
 	*(data++)  	= motoRPS;						//	6. Частота вращения двигателя(0.01 об / сек)
 	*(data++)  	= motoCur;						//	7. Ток двигателя(мА)
 	*(data++)  	= motoCounter;					//	8. Счётчик оборотов двигателя(1 / 6 об)
-	*(data++)  	= GetShaftRPS();				//	9. Частота вращения головки(0.01 об / сек)
-	*(data++)  	= GetShaftCount();				//	10. Счётчик оборотов головки(об)
+	*(data++)  	= 0;							//	9. Частота вращения головки(0.01 об / сек)
+	*(data++)  	= 0;							//	10. Счётчик оборотов головки(об)
 	*(data++)  	= ax;							//	11. AX(уе)
 	*(data++)  	= ay;							//	12. AY(уе)
 	*(data++)  	= az;							//	13. AZ(уе)
@@ -1103,7 +1103,7 @@ static u32 InitRspMan_20(__packed u16 *data)
 	*(data++)	= sensMinMax[1].ampMin;			//	21. Амплитуда опорного датчика минимум по всей волне(у.е)
 	*(data++)	= sensMinMax[1].timeMax;		//	22. Время опорного датчика максимум по первому вступлению(0.05 мкс)
 	*(data++)	= sensMinMax[1].timeMin;		//	23. Время опорного датчика минимум по первому вступлению(0.05 мкс)
-	*(data++)	= GetShaftState();				//	24. Состояние датчика Холла(0, 1)
+	*(data++)	= 0;							//	24. Состояние датчика Холла(0, 1)
 	*(data++)	= curFireVoltage;				//	25. Напряжение излучателя(В)
 	*(data++)	= motoVoltage;					//	26. Напряжение двигателя(В)
 	*(data++)	= dspRcvCount;					//	27. Счётчик запросов DSP
@@ -2430,14 +2430,14 @@ static void UpdateDSP()
 #ifndef WIN32
 
 static const u32 dspFlashPages[] = {
-#include "G26K1BF592.LDR.H"
+#include "G26R_2_BF592.LDR.H"
 };
 
 //u16 dspFlashLen = 0;
 //u16 dspFlashCRC = 0;
 
 static const u32 dspBootFlashPages[] = {
-#include "G26K_2_BOOT_BF592.LDR.H"
+#include "G26R_2_BF592.LDR.H"
 };
 
 //u16 dspBootFlashLen = 0;
@@ -2550,7 +2550,7 @@ static void FlashDSP()
 //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 static const u32 motoFlashPages[] = {
-#include "G26K2LPC824.BIN.H"
+#include "G26R_2_LPC824.BIN.H"
 };
 
 u16 motoFlashLen = 0;

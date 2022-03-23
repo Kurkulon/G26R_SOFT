@@ -8,8 +8,8 @@
 //#define NAND_SAMSUNG
 #define NAND_MICRON
 
-#define NAND_CHIP_BITS		3
-#define NAND_MAX_CHIP		(1<<3)
+#define NAND_CHIP_BITS		2
+#define NAND_MAX_CHIP		(1<<NAND_CHIP_BITS)
 #define NAND_CHIP_MASK		(NAND_MAX_CHIP-1)
 
 #define K9K8_CHIP_BITS		3
@@ -370,12 +370,6 @@ extern void SetClock(const RTC &t);
 
 extern void EnableDSP();	
 extern void DisableDSP();	
-
-inline u16 GetShaftRPS() { extern u16 shaftRPS; return shaftRPS; }
-inline u16 GetShaftCount() { extern volatile u16 curShaftCounter; return curShaftCounter; }
-extern u16 GetShaftState();
-
-extern void Set_Sync_Rot(u16 RPS, u16 samplePerRound);
 
 extern void EnableDSP();	
 extern void DisableDSP();	

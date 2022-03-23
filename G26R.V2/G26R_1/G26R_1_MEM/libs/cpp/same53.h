@@ -1088,6 +1088,22 @@ namespace T_HW
 	#define I2C_CMD_STOP	(3<<16)           	/**< \brief (SERCOM_I2CM_CTRLB) Command */
 	#define I2C_ACKACT		(1<<18)           	/**< \brief (SERCOM_I2CM_CTRLB) Acknowledge Action */
 
+	#define I2C_ADDR(value) ((value)&0x7FF)
+	#define I2C_LENEN       (1<<13)          	/**< (SERCOM_I2CM_ADDR) Length Enable Position */
+	#define I2C_HS          (1<<14)          	/**< (SERCOM_I2CM_ADDR) High Speed Mode Position */
+	#define I2C_TENBITEN    (1<<15)          	/**< (SERCOM_I2CM_ADDR) Ten Bit Addressing Enable Position */
+	#define I2C_LEN(value)  (((value)&0xFF)<<16)
+
+	#define I2C_BUSERR     (1<<0)               /**< (SERCOM_I2CM_STATUS) Bus Error Position */
+	#define I2C_ARBLOST    (1<<1)               /**< (SERCOM_I2CM_STATUS) Arbitration Lost Position */
+	#define I2C_RXNACK     (1<<2)               /**< (SERCOM_I2CM_STATUS) Received Not Acknowledge Position */
+	#define I2C_BUSSTATE   (1<<4)               /**< (SERCOM_I2CM_STATUS) Bus State Position */
+	#define I2C_LOWTOUT    (1<<6)               /**< (SERCOM_I2CM_STATUS) SCL Low Timeout Position */
+	#define I2C_CLKHOLD    (1<<7)               /**< (SERCOM_I2CM_STATUS) Clock Hold Position */
+	#define I2C_MEXTTOUT   (1<<8)               /**< (SERCOM_I2CM_STATUS) Master SCL Low Extend Timeout Position */
+	#define I2C_SEXTTOUT   (1<<9)               /**< (SERCOM_I2CM_STATUS) Slave SCL Low Extend Timeout Position */
+	#define I2C_LENERR     (1<<10)              /**< (SERCOM_I2CM_STATUS) Length Error Position */
+
 	//++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 	
 	struct S_SPI

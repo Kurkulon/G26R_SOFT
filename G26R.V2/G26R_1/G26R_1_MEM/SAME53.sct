@@ -10,6 +10,7 @@ LR_IROM1 0x00004000 0x0007C000  {    ; load region size_region
   }
 
   RW_IRAM1 0x20000300 0x0002FD00 {  ; RW data
+   SEGGER_RTT.o (+RW, +First)
    .ANY2 (+RW +ZI)
   }
 

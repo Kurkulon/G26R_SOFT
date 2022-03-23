@@ -3,6 +3,8 @@
 #include "time.h"
 #include "COM_DEF.h"
 #include "CRC16_8005.h"
+#include "list.h"
+#include "PointerCRC.h"
 
 #include "hardware.h"
 
@@ -115,15 +117,18 @@ static void I2C_Init();
 	#define	SPI_DMACH_TX		4
 	#define	SPI_DMACH_RX		5
 	#define	NAND_MEMCOPY_DMACH	6
+	#define	I2C_DMACH			7
 	#define	DSP_DMACH			30
 	#define	CRC_DMACH			31
 
-	#define I2C			HW::I2C3
-	#define PIO_I2C		HW::PIOA 
-	#define PIN_SDA		22 
-	#define PIN_SCL		23 
-	#define SDA			(1<<PIN_SDA) 
-	#define SCL			(1<<PIN_SCL) 
+	#define I2C				HW::I2C3
+	#define PIO_I2C			HW::PIOA 
+	#define PIN_SDA			22 
+	#define PIN_SCL			23 
+	#define SDA				(1<<PIN_SDA) 
+	#define SCL				(1<<PIN_SCL) 
+	#define I2C_TRIGSRC_RX	DMCH_TRIGSRC_SERCOM3_RX
+	#define I2C_TRIGSRC_TX	DMCH_TRIGSRC_SERCOM3_TX
 
 	__align(16) T_HW::DMADESC DmaTable[32];
 	__align(16) T_HW::DMADESC DmaWRB[32];
@@ -178,28 +183,27 @@ static void I2C_Init();
 	#define MT(v)			(v)
 	#define BAUD2CLK(x)		((u32)(1000000/x+0.5))
 
+	#define MANT_IRQ_2		TCC0_IRQ
 	#define MANT_IRQ		TC0_IRQ
 	#define MANR_IRQ		TCC2_1_IRQ
 	//#define MANR_EXTINT		11
 	#define MANR_EXTINT		7
 
+	#define ManT_SET_PR(v)				//{ ManTT->PERB = (v); }
+	#define ManT_SET_CR(v)				//{ ManTT->CCB[0] = (v); ManTT->CCB[1] = (v); }
 	
 	#define PIO_MANCH		HW::PIOC
-	#define PIN_L1			25 
-	#define PIN_H1			24 
-	#define PIN_L2			27 
-	#define PIN_H2			26
+	#define PIN_MAN_TX1		13
+	#define PIN_MAN_TX2		14 
 
-	#define L1				(1UL<<PIN_L1)
-	#define H1				(1UL<<PIN_H1)
-	#define L2				(1UL<<PIN_L2)
-	#define H2				(1UL<<PIN_H2)
+	#define MAN_TX1			(1UL<<PIN_MAN_TX1)
+	#define MAN_TX2			(1UL<<PIN_MAN_TX2)
 
-	#define PIO_MANCHRX		HW::PIOA
+	#define PIO_MAN_RX		HW::PIOA
 	#define PIO_RXD			HW::PIOB
-	#define PIN_MANCHRX		11
+	#define PIN_MAN_RX		11
 	#define PIN_RXD			23
-	#define MANCHRX			(1UL<<PIN_MANCHRX)
+	#define MAN_RX			(1UL<<PIN_MAN_RX)
 	#define RXD				(1UL<<PIN_RXD)
 
 
@@ -215,6 +219,10 @@ static void I2C_Init();
 	#define Pin_ManRcvSync_Set()	HW::PIOB->BSET(18)		
 	#define Pin_ManRcvSync_Clr()	HW::PIOB->BCLR(18)		
 
+	#define PIO_NAND_DATA	HW::PIOA
+	#define PIO_ALE			HW::PIOB 
+	#define PIO_CLE			HW::PIOB 
+	#define PIO_WE_RE		HW::PIOB 
 	#define PIO_WP			HW::PIOB 
 	#define PIO_FLREADY		HW::PIOB
 	#define PIO_FCS			HW::PIOB
@@ -222,13 +230,13 @@ static void I2C_Init();
 	#define PIN_WP			24 
 	#define PIN_FLREADY		25 
 	#define PIN_FCS0		2 
-	#define PIN_FCS1		9 
-	#define PIN_FCS2		8 
-	#define PIN_FCS3		7 
-	#define PIN_FCS4		6 
-	#define PIN_FCS5		5 
-	#define PIN_FCS6		4 
-	#define PIN_FCS7		3 
+	#define PIN_FCS1		3 
+	#define PIN_FCS2		4 
+	#define PIN_FCS3		5 
+	#define PIN_WE			30 
+	#define PIN_RE			31 
+	#define PIN_ALE			0 
+	#define PIN_CLE			1 
 
 	#define WP				(1<<PIN_WP) 
 	#define FLREADY			(1UL<<PIN_FLREADY) 
@@ -236,10 +244,10 @@ static void I2C_Init();
 	#define FCS1			(1<<PIN_FCS1) 
 	#define FCS2			(1<<PIN_FCS2) 
 	#define FCS3			(1<<PIN_FCS3) 
-	#define FCS4			(1<<PIN_FCS4) 
-	#define FCS5			(1<<PIN_FCS5) 
-	#define FCS6			(1<<PIN_FCS6) 
-	#define FCS7			(1<<PIN_FCS7) 
+	#define WE				(1UL<<PIN_WE) 
+	#define RE				(1UL<<PIN_RE) 
+	#define ALE				(1UL<<PIN_ALE) 
+	#define CLE				(1UL<<PIN_CLE) 
 
 	#define PIO_ENVCORE		HW::PIOC
 	#define PIN_ENVCORE		14 
@@ -249,42 +257,8 @@ static void I2C_Init();
 	#define PIO_RESET		HW::PIOC
 	#define RESET			(1<<PIN_RESET)
 
-	#define PIN_SYNC		12
-	#define PIN_ROT			14
-
-	#define SYNC			(1<<PIN_SYNC)
-	#define ROT				(1<<PIN_ROT)
-	#define PIO_SYNC		HW::PIOB
-	#define PIO_ROT			HW::PIOB
-	#define US2SRT(v)		(v)
 
 
-	#define PIN_SHAFT		13
-	#define SHAFT			(1<<PIN_SHAFT)
-	#define PIO_SHAFT		HW::PIOB
-	#define SHAFT_EXTINT	13
-	#define IRQ_SHAFT		(EIC_0_IRQ+SHAFT_EXTINT)
-
-	#define Pin_ShaftIRQ_Set()		//HW::P6->BSET(6);
-	#define Pin_ShaftIRQ_Clr()		//HW::P6->BCLR(6);
-
-	#define PIO_NAND_DATA	HW::PIOA
-//	#define PIO_WP			HW::PIOB 
-	#define PIO_ALE			HW::PIOB 
-	#define PIO_CLE			HW::PIOB 
-	#define PIO_WE_RE		HW::PIOB 
-	//#define PIO_RB			HW::PIOC
-	//#define PIO_FCS			HW::PIOC
-
-	#define PIN_WE			30 
-	#define PIN_RE			31 
-	#define PIN_ALE			0 
-	#define PIN_CLE			1 
-
-	#define WE				(1UL<<PIN_WE) 
-	#define RE				(1UL<<PIN_RE) 
-	#define ALE				(1UL<<PIN_ALE) 
-	#define CLE				(1UL<<PIN_CLE) 
 //	#define WP				(1<<6) 
 //	#define FCS1			(1<<5) 
 //	#define FCS2			(1<<6) 
@@ -307,6 +281,12 @@ static void I2C_Init();
 	#define URXD1			(1<<PIN_URXD1) 
 	#define UTXD2			(1<<PIN_UTXD2) 
 	#define URXD2			(1<<PIN_URXD2) 
+
+	#define CLOCK_EXTINT	7
+	#define CLOCK_IRQ		(EIC_0_IRQ+CLOCK_EXTINT)
+	#define PIO_RTC			HW::PIOB
+	#define PIN_RTCINT		23 
+	#define RTCINT			(1UL<<PIN_RTCINT)
 
 
 #elif defined(CPU_XMC48) //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -1291,9 +1271,9 @@ static byte clog2(u32 v) {byte r = 0; while (v>>=1) {r++;}; return r;}
 
 #ifndef WIN32
 
-static u32 chipSelect[NAND_MAX_CHIP] = { FCS0, FCS1, FCS2, FCS3, FCS4, FCS5, FCS6, FCS7 };
+static u32 chipSelect[NAND_MAX_CHIP] = { FCS0, FCS1, FCS2, FCS3 };
 
-#define maskChipSelect (FCS0|FCS1|FCS2|FCS3|FCS4|FCS5|FCS6|FCS7)
+#define maskChipSelect (FCS0|FCS1|FCS2|FCS3)
 
 #endif
 
@@ -2203,7 +2183,7 @@ static void NAND_Init()
 	PIO_NAND_DATA->DIRSET = 0xFF;
 	PIO_NAND_DATA->SetWRCONFIG(0xFF, PORT_INEN|PORT_DRVSTR|PORT_WRPINCFG);
 	PIO_NAND_DATA->CTRL |= 0xFF;
-	PIO_FCS->DIRSET = FCS0|FCS1|FCS2|FCS3|FCS4|FCS5|FCS6|FCS7; PIO_FCS->SET(FCS0|FCS1|FCS2|FCS3|FCS4|FCS5|FCS6|FCS7);
+	PIO_FCS->DIRSET = FCS0|FCS1|FCS2|FCS3; PIO_FCS->SET(FCS0|FCS1|FCS2|FCS3);
 	PIO_CLE->DIRSET = CLE; PIO_CLE->CLR(CLE);
 	PIO_ALE->DIRSET = ALE; PIO_ALE->CLR(ALE);
 
@@ -2874,10 +2854,10 @@ bool NAND_CheckCopyComplete()
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 #ifndef WIN32
 
-inline void ManDisable()	{ PIO_MANCH->CLR(L1|L2);	PIO_MANCH->SET(H1|H2);							} 
-inline void ManZero()		{ PIO_MANCH->CLR(L2);		PIO_MANCH->SET(L1|H1);		PIO_MANCH->CLR(H2);	} 
-inline void ManOne()		{ PIO_MANCH->CLR(L1);		PIO_MANCH->SET(L2|H2);		PIO_MANCH->CLR(H1);	} 
-inline void ManDischarge()	{ PIO_MANCH->CLR(L1|L2);	PIO_MANCH->CLR(H1|H2);							} 
+inline void ManDisable()	{ PIO_MANCH->CLR(MAN_TX1|MAN_TX2);								} 
+inline void ManZero()		{ PIO_MANCH->CLR(MAN_TX2);			PIO_MANCH->SET(MAN_TX1);	} 
+inline void ManOne()		{ PIO_MANCH->CLR(MAN_TX1);			PIO_MANCH->SET(MAN_TX2);	} 
+inline void ManDischarge()	{ PIO_MANCH->CLR(MAN_TX1|MAN_TX2);								} 
 
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
@@ -3196,7 +3176,7 @@ static void InitManTransmit()
 
 	HW::MCLK->APBAMASK |= APBA_TC0;
 
-	PIO_MANCH->DIRSET = L1|H1|L2|H2;
+	PIO_MANCH->DIRSET = MAN_TX1|MAN_TX2;
 
 	ManTT->CTRLA = TCC_SWRST;
 
@@ -3291,7 +3271,7 @@ static __irq void ManTrmIRQ2()
 					stateManTrans++;
 				};
 
-				ManT_CCU8->GCSS = ManT_CCU8_GCSS;
+				//ManT_CCU8->GCSS = ManT_CCU8_GCSS;
 
 				tw <<= 1;
 				count--;
@@ -3338,7 +3318,7 @@ static __irq void ManTrmIRQ2()
 				count--;
 			};
 
-			ManT_CCU8->GCSS = ManT_CCU8_GCSS;
+//			ManT_CCU8->GCSS = ManT_CCU8_GCSS;
 
 			break;
 
@@ -3397,7 +3377,7 @@ static __irq void ManTrmIRQ2()
 				};
 			};
 
-			ManT_CCU8->GCSS = ManT_CCU8_GCSS;
+//			ManT_CCU8->GCSS = ManT_CCU8_GCSS;
 
 			break;
 
@@ -3410,17 +3390,16 @@ static __irq void ManTrmIRQ2()
 
 			stateManTrans = 0;
 
-			HW::SCU_GENERAL->CCUCON &= ~ManT_CCUCON;
+//			HW::SCU_GENERAL->CCUCON &= ~ManT_CCUCON;
 
 
-			ManT1->TCCLR = CC8_TRBC;
-			ManT1->INTE = 0;
-			ManT2->TCCLR = CC8_TRBC;
-			ManT3->TCCLR = CC8_TRBC;
+			//ManT1->TCCLR = CC8_TRBC;
+			//ManT1->INTE = 0;
+			//ManT2->TCCLR = CC8_TRBC;
+			//ManT3->TCCLR = CC8_TRBC;
 
-			ManT_CCU8->GCSS = ManT_OUT_GCSS;
-			ManT_CCU8->GCSC = ManT_OUT_GCSC;
-			//ManT_CCU8->GIDLS = ManT_CCU8_GIDLS;
+			//ManT_CCU8->GCSS = ManT_OUT_GCSS;
+			//ManT_CCU8->GCSC = ManT_OUT_GCSC;
 
 			manTB->ready = true;
 			trmBusy = false;
@@ -3546,9 +3525,34 @@ static void InitManTransmit2()
 
 	using namespace HW;
 
-	VectorTableExt[MANT_CCU8_IRQ] = ManTrmIRQ2;
-	CM4::NVIC->CLR_PR(MANT_CCU8_IRQ);
-	CM4::NVIC->SET_ER(MANT_CCU8_IRQ);
+	VectorTableExt[MANT_IRQ] = ManTrmIRQ2;
+	CM4::NVIC->CLR_PR(MANT_IRQ);
+	CM4::NVIC->SET_ER(MANT_IRQ);
+
+#ifdef CPU_SAME53	
+
+	HW::GCLK->PCHCTRL[GCLK_TC0_TC1] = GCLK_GEN(GEN_1M)|GCLK_CHEN;
+
+	HW::MCLK->APBAMASK |= APBA_TC0;
+
+	PIO_MANCH->DIRSET = MAN_TX1|MAN_TX2;
+
+	ManTT->CTRLA = TCC_SWRST;
+
+	while(ManTT->SYNCBUSY);
+
+	//SetTrmBoudRate(0);
+
+	ManTT->CTRLA = TC_MODE_COUNT8;
+	ManTT->WAVE = TC_WAVEGEN_NPWM;
+	ManTT->PER8 = GetTrmBaudRate(0) - 1;
+
+	ManTT->INTENCLR = ~TC_OVF;
+	ManTT->INTENSET = TC_OVF;
+
+	ManTT->INTFLAG = ~0;
+
+#elif defined(CPU_XMC48)
 
 	HW::CCU_Enable(ManT_CCU8_PID);
 
@@ -3598,6 +3602,9 @@ static void InitManTransmit2()
 	//ManT1->SWR = ~0;
 	//ManT_CCU8->GIDLC = ManT_CCU8_GIDLC;
 	//ManT->INTE = CC8_PME;
+
+#endif
+
 }
 
 #endif
@@ -3827,13 +3834,13 @@ static void InitManRecieve()
 	EVSYS->CH[EVENT_MANR_2].CHANNEL = EVGEN_TC1_OVF|EVSYS_PATH_ASYNCHRONOUS|EVSYS_EDGSEL_RISING_EDGE;;
 	EVSYS->USER[EVSYS_USER_TCC2_MC_0] = EVENT_MANR_2+1;
 
-	PIO_MANCHRX->DIRCLR = MANCHRX;
-	PIO_MANCHRX->CTRL |= MANCHRX;
+	PIO_MAN_RX->DIRCLR = MAN_RX;
+	PIO_MAN_RX->CTRL |= MAN_RX;
 
 	PIO_RXD->DIRCLR = RXD;
 	PIO_RXD->CTRL |= RXD;
 
-	PIO_MANCHRX->SetWRCONFIG(	MANCHRX,	PORT_PMUX(0)|PORT_WRPINCFG|PORT_PMUXEN|PORT_WRPMUX|PORT_INEN);
+	PIO_MAN_RX->SetWRCONFIG(	MAN_RX,		PORT_PMUX(0)|PORT_WRPINCFG|PORT_PMUXEN|PORT_WRPMUX|PORT_INEN);
 	PIO_RXD->SetWRCONFIG(		RXD,		PORT_PMUX(0)|PORT_WRPINCFG|PORT_PMUXEN|PORT_WRPMUX|PORT_INEN);
 
 	//PIO_MANCHRX->PINCFG[PIN_MANCHRX] = PINGFG_INEN|PINGFG_PMUXEN;
@@ -3967,299 +3974,232 @@ bool RcvManData(MRB *mrb)
 
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+//++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+//+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
-static byte *twi_wrPtr = 0;
-static byte *twi_rdPtr = 0;
-static u16 twi_wrCount = 0;
-static u16 twi_rdCount = 0;
-static byte *twi_wrPtr2 = 0;
-static u16 twi_wrCount2 = 0;
-static byte twi_adr = 0;
-static DSCI2C* twi_dsc = 0;
-static DSCI2C* twi_lastDsc = 0;
+List<DSCI2C>	i2c_ReqList;
+DSCI2C*			i2c_dsc = 0;
 
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
+
+
+//++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+bool I2C_Update()
+{
 #ifdef CPU_SAME53	
 
-static __irq void I2C_Handler()
-{
-	using namespace HW;
+	enum STATE { WAIT = 0, WRITE, READ, STOP };
 
-	HW::PIOB->BSET(20);
+	static STATE state = WAIT;
+	static byte *wrPtr = 0;
+	static byte *rdPtr = 0;
+	static u16 	wrCount = 0;
+	static u16 	rdCount = 0;
+	static byte *wrPtr2 = 0;
+	static u16	wrCount2 = 0;
+	static byte adr = 0;
+	static __align(16) T_HW::DMADESC wr_dmadsc;
 
-	byte state = I2C->INTFLAG;
-	bool nextdsc = false;
-
-	if(state & I2C_ERROR) // Received data is available
+	switch (state)
 	{
-		I2C->INTFLAG = I2C_ERROR;
-		I2C->STATUS = ~0;
-		nextdsc = true;
-	}
-	else if(state & I2C_SB) // Received data is available
-	{
-		*twi_rdPtr++ = I2C->DATA; // receive data
+		case WAIT:
 
-		twi_rdCount--;
+			i2c_dsc = i2c_ReqList.Get();
 
-		if (twi_rdCount > 0)
-		{
-			I2C->CTRLB = I2C_CMD_2;
-		}
-		else
-		{
-			I2C->CTRLB = I2C_ACKACT;
-
-			nextdsc = true; 
-		};
-	}
-	else if(state & I2C_MB) // Data can be transmitted 
-	{
-		if (twi_wrCount > 0)
-		{
-			I2C->DATA = *twi_wrPtr++;
-
-			twi_wrCount--;
-
-			twi_dsc->ack = true;
-
-			if(twi_wrCount == 0 && twi_wrCount2 != 0)
+			if (i2c_dsc != 0)
 			{
-				twi_wrPtr = twi_wrPtr2;
-				twi_wrCount = twi_wrCount2;
-				twi_wrCount2 = 0;
+				DSCI2C &dsc = *i2c_dsc;
+
+				dsc.ready = false;
+				dsc.ack = false;
+
+				wrPtr = (byte*)dsc.wdata;	
+				rdPtr = (byte*)dsc.rdata;	
+				wrPtr2 = (byte*)dsc.wdata2;	
+				wrCount = dsc.wlen;
+				wrCount2 = dsc.wlen2;
+				rdCount = dsc.rlen;
+				adr = dsc.adr;
+
+				if (wrPtr2 == 0) wrCount2 = 0;
+
+				I2C->CTRLB = I2C_SMEN;
+				I2C->STATUS.BUSSTATE = BUSSTATE_IDLE;
+
+				I2C->INTFLAG = ~0;
+
+				T_HW::DMADESC &dmadsc = DmaTable[I2C_DMACH];
+
+				if (wrCount == 0)
+				{
+					dmadsc.SRCADDR	= &I2C->DATA;
+					dmadsc.DSTADDR	= rdPtr + rdCount;
+					dmadsc.DESCADDR = 0;
+					dmadsc.BTCNT	= rdCount;
+					dmadsc.BTCTRL	= DMDSC_VALID|DMDSC_BEATSIZE_BYTE|DMDSC_DSTINC;
+
+					__disable_irq();
+
+					
+					HW::DMAC->CH[I2C_DMACH].CTRLB = DMCH_TRIGACT_BURST|I2C_TRIGSRC_RX;
+					HW::DMAC->CH[I2C_DMACH].INTENCLR = ~0;
+					HW::DMAC->CH[I2C_DMACH].INTFLAG = ~0;
+					HW::DMAC->CH[I2C_DMACH].CTRLA = DMCH_ENABLE;
+
+					__enable_irq();
+
+					I2C->ADDR = ((rdCount <= 255) ? (I2C_LEN(rdCount)|I2C_LENEN) : 0) | (adr << 1) | 1;
+					state = READ; 
+				}
+				else
+				{
+					dmadsc.SRCADDR	= wrPtr + wrCount;
+					dmadsc.DSTADDR	= &I2C->DATA;
+					dmadsc.BTCNT	= wrCount;
+					dmadsc.BTCTRL	= DMDSC_VALID|DMDSC_BEATSIZE_BYTE|DMDSC_SRCINC;
+
+					if (wrCount2 == 0)
+					{
+						dmadsc.DESCADDR = 0;
+					}
+					else
+					{
+						wr_dmadsc.SRCADDR	= wrPtr2 + wrCount2;
+						wr_dmadsc.DSTADDR	= &I2C->DATA;
+						wr_dmadsc.BTCNT		= wrCount2;
+						wr_dmadsc.BTCTRL	= DMDSC_VALID|DMDSC_BEATSIZE_BYTE|DMDSC_SRCINC;
+						dmadsc.DESCADDR		= &wr_dmadsc;
+					};
+
+					__disable_irq();
+
+					HW::DMAC->CH[I2C_DMACH].CTRLB = DMCH_TRIGACT_BURST|I2C_TRIGSRC_TX;
+					HW::DMAC->CH[I2C_DMACH].INTENCLR = ~0;
+					HW::DMAC->CH[I2C_DMACH].INTFLAG = ~0;
+					HW::DMAC->CH[I2C_DMACH].CTRLA = DMCH_ENABLE;
+
+					__enable_irq();
+
+					I2C->ADDR = (adr << 1);
+					state = WRITE; 
+				};
 			};
-		}
-		else if (twi_rdCount > 0)
-		{
-			I2C->ADDR = (twi_adr << 1) | 1;
-		}
-		else
-		{
-			nextdsc = true; //I2C->CTRLB |= I2C_CMD_STOP;
-		};
-	}
-	else
-	{
-		twi_rdCount = 0;
-		twi_wrCount = 0;
 
-		nextdsc = true; //I2C->CTRLB |= I2C_CMD_STOP;
-	};
+			break;
 
-	if (nextdsc)
-	{
-		twi_dsc->ready = true;
-		twi_dsc->readedLen = twi_dsc->rlen - twi_rdCount;
+		case WRITE:
 
-		DSCI2C *ndsc = twi_dsc->next;
-
-		if (ndsc != 0)
-		{
-			twi_dsc->next = 0;
-			twi_dsc = ndsc;
-
-			twi_dsc->ready = false;
-			twi_dsc->ack = false;
-			twi_dsc->readedLen = 0;
-
-			twi_wrPtr = (byte*)twi_dsc->wdata;	
-			twi_rdPtr = (byte*)twi_dsc->rdata;	
-			twi_wrPtr2 = (byte*)twi_dsc->wdata2;	
-			twi_wrCount = twi_dsc->wlen;
-			twi_wrCount2 = twi_dsc->wlen2;
-			twi_rdCount = twi_dsc->rlen;
-			twi_adr = twi_dsc->adr;
-
-			if (twi_wrPtr2 == 0) twi_wrCount2 = 0;
-
-			//I2C->STATUS.BUSSTATE = BUSSTATE_IDLE;
-
-			I2C->INTFLAG = ~0;
-			I2C->INTENSET = I2C_MB|I2C_SB;
-
-			I2C->ADDR = (twi_dsc->adr << 1) | ((twi_wrCount == 0) ? 1 : 0);
-		}
-		else
-		{
-			I2C->CTRLB = I2C_CMD_STOP|I2C_ACKACT;
-
-			twi_lastDsc = twi_dsc = 0;
-		};
-	};
-
-	HW::PIOB->BCLR(20);
-}
-
-#elif defined(CPU_XMC48)
-
-static __irq void I2C_Handler()
-{
-	using namespace HW;
-
-//	HW::P6->BSET(2);
-
-	u32 a = I2C->PSR_IICMode;
-
-	if(a & ACK)
-	{
-		if (twi_wrCount > 0)
-		{
-			I2C->TBUF[0] = TDF_MASTER_SEND | *twi_wrPtr++;
-
-			twi_wrCount--;
-
-			twi_dsc->ack = true;
-
-			if(twi_wrCount == 0 && twi_wrCount2 != 0)
+			if((I2C->INTFLAG & I2C_ERROR) || I2C->STATUS.RXNACK)
 			{
-				twi_wrPtr = twi_wrPtr2;
-				twi_wrCount = twi_wrCount2;
-				twi_wrCount2 = 0;
-			};
-		}
-		else if (twi_rdCount > 0)
-		{
-			if(a & (SCR|RSCR))
-			{
-				I2C->TBUF[0] = TDF_MASTER_RECEIVE_ACK; 
+				I2C->CTRLB = I2C_SMEN|I2C_CMD_STOP;
+				
+				state = STOP; 
 			}
 			else
 			{
-				I2C->TBUF[0] = TDF_MASTER_RESTART | (twi_adr << 1) | 1;
-			};
-		}
-		else
-		{
-			I2C->TBUF[0] = TDF_MASTER_STOP;
-		};
-	}
-	else if (a & (RIF|AIF))
-	{
-		byte t = I2C->RBUF;
+				DSCI2C &dsc = *i2c_dsc;
 
-		if (twi_rdCount > 0)
-		{
-			*twi_rdPtr++ = t; // receive data
-			twi_rdCount--;
-		};
-			
-		I2C->TBUF[0] = (twi_rdCount > 0) ? TDF_MASTER_RECEIVE_ACK : TDF_MASTER_RECEIVE_NACK; 
-	}
-	else if ((a & PCR) == 0)
-	{
-		I2C->TBUF[0] = TDF_MASTER_STOP; 
-	}
-	else
-	{
-		twi_dsc->ready = true;
-		twi_dsc->readedLen = twi_dsc->rlen - twi_rdCount;
+				__disable_irq();
 
-//		state = 0;
+				bool c = ((HW::DMAC->CH[I2C_DMACH].CTRLA & DMCH_ENABLE) == 0 || (HW::DMAC->CH[I2C_DMACH].INTFLAG & DMCH_TCMPL)) && (I2C->INTFLAG & I2C_MB);
+				
+				__enable_irq();
+
+				if (c)
+				{
+					dsc.ack = true;
+
+					if (rdCount > 0)
+					{
+						T_HW::DMADESC &dmadsc = DmaTable[I2C_DMACH];
+
+						dmadsc.SRCADDR	= &I2C->DATA;
+						dmadsc.DSTADDR	= rdPtr + rdCount;
+						dmadsc.DESCADDR = 0;
+						dmadsc.BTCNT	= rdCount;
+						dmadsc.BTCTRL	= DMDSC_VALID|DMDSC_BEATSIZE_BYTE|DMDSC_DSTINC;
+
+						__disable_irq();
+
+						HW::DMAC->CH[I2C_DMACH].CTRLB = DMCH_TRIGACT_BURST|I2C_TRIGSRC_RX;
+						HW::DMAC->CH[I2C_DMACH].INTENCLR = ~0;
+						HW::DMAC->CH[I2C_DMACH].INTFLAG = ~0;
+						HW::DMAC->CH[I2C_DMACH].CTRLA = DMCH_ENABLE;
+
+						__enable_irq();
+
+						I2C->ADDR = ((rdCount <= 255) ? (I2C_LEN(rdCount)|I2C_LENEN) : 0) | (adr << 1) | 1;
 		
-		DSCI2C *ndsc = twi_dsc->next;
+						state = READ; 
+					}
+					else
+					{
+						I2C->CTRLB = I2C_SMEN|I2C_ACKACT|I2C_CMD_STOP;
+						
+						state = STOP; 
+					};
+				};
+			};
 
-		if (ndsc != 0)
-		{
-			twi_dsc->next = 0;
-			twi_dsc = ndsc;
+			break;
 
-			twi_dsc->ready = false;
-			twi_dsc->ack = false;
-			twi_dsc->readedLen = 0;
+		case READ:
 
-			twi_wrPtr = (byte*)twi_dsc->wdata;	
-			twi_rdPtr = (byte*)twi_dsc->rdata;	
-			twi_wrPtr2 = (byte*)twi_dsc->wdata2;	
-			twi_wrCount = twi_dsc->wlen;
-			twi_wrCount2 = twi_dsc->wlen2;
-			twi_rdCount = twi_dsc->rlen;
-			twi_adr = twi_dsc->adr;
+			if((I2C->INTFLAG & I2C_ERROR) || I2C->STATUS.RXNACK)
+			{
+				I2C->CTRLB = I2C_SMEN|I2C_ACKACT|I2C_CMD_STOP;
+				
+				state = STOP; 
+			}
+			else
+			{
+				DSCI2C &dsc = *i2c_dsc;
 
-			if (twi_wrPtr2 == 0) twi_wrCount2 = 0;
+				__disable_irq();
 
-			//I2C->CCR |= RIEN|AIEN;
-			//I2C->PCR_IICMode |= PCRIEN|NACKIEN|ARLIEN|SRRIEN|ERRIEN|ACKIEN;
+				bool c = (HW::DMAC->CH[I2C_DMACH].CTRLA & DMCH_ENABLE) == 0 || (HW::DMAC->CH[I2C_DMACH].INTFLAG & DMCH_TCMPL);
+				
+				__enable_irq();
 
-			I2C->PSCR = ~0;
+				if (c)
+				{
+					dsc.ack = true;
 
-			I2C->TBUF[0] = TDF_MASTER_START | (twi_dsc->adr << 1) | ((twi_wrCount == 0) ? 1 : 0);
-		}
-		else
-		{
-			I2C->CCR = I2C__CCR;
-			I2C->PCR_IICMode = I2C__PCR;
+					I2C->CTRLB = I2C_SMEN|I2C_ACKACT|I2C_CMD_STOP;
+						
+					state = STOP; 
+				};
+			};
 
-			twi_lastDsc = twi_dsc = 0;
-		};
+			break;
 
-//		I2C->PSCR = PCR|NACK;
+		case STOP:
+
+			if (I2C->STATUS.BUSSTATE == BUSSTATE_IDLE)
+			{
+				i2c_dsc->ready = true;
+				
+				i2c_dsc = 0;
+				
+				I2C->CTRLB = I2C_SMEN;
+
+				state = WAIT; 
+			}
+			else if (I2C->SYNCBUSY == 0)
+			{
+				I2C->CTRLB = I2C_SMEN|I2C_ACKACT|I2C_CMD_STOP;
+			};
+
+			break;
 	};
 
-	I2C->PSCR = a;
-
-//	HW::P6->BCLR(2);
-}
+#elif defined(CPU_XMC48)
 
 #endif
 
-//++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-
-bool I2C_Write(DSCI2C *d)
-{
-#ifndef WIN32
-
-	using namespace HW;
-
-	if (twi_dsc != 0 || d == 0) { return false; };
-	if ((d->wdata == 0 || d->wlen == 0) && (d->rdata == 0 || d->rlen == 0)) { return false; }
-
-	twi_dsc = d;
-
-	twi_dsc->ready = false;
-	twi_dsc->ack = false;
-	twi_dsc->readedLen = 0;
-
-	twi_wrPtr = (byte*)twi_dsc->wdata;	
-	twi_rdPtr = (byte*)twi_dsc->rdata;	
-	twi_wrPtr2 = (byte*)twi_dsc->wdata2;	
-	twi_wrCount = twi_dsc->wlen;
-	twi_wrCount2 = twi_dsc->wlen2;
-	twi_rdCount = twi_dsc->rlen;
-	twi_adr = twi_dsc->adr;
-
-	if (twi_wrPtr2 == 0) twi_wrCount2 = 0;
-
-	__disable_irq();
-
-	#ifdef CPU_SAME53
-
-		I2C->STATUS.BUSSTATE = BUSSTATE_IDLE;
-
-		I2C->INTFLAG = ~0;
-		I2C->INTENSET = I2C_MB|I2C_SB;
-
-		I2C->ADDR = (twi_dsc->adr << 1) | ((twi_wrCount == 0) ? 1 : 0);
-
-	#elif defined(CPU_XMC48)
-
-		I2C->PSCR = ~0;//RIF|AIF|TBIF|ACK|NACK|PCR;
-
-//		state = (wrCount == 0) ? 1 : 0;
-
-		I2C->TBUF[0] = TDF_MASTER_START | (twi_dsc->adr << 1) | ((twi_wrCount == 0) ? 1 : 0);
-
-		I2C->CCR |= RIEN|AIEN;
-		I2C->PCR_IICMode |= PCRIEN|NACKIEN|ARLIEN|SRRIEN|ERRIEN|ACKIEN;
-
-	#endif
-		
-	__enable_irq();
-
-#endif
-
-	return true;
+	return false;
 }
 
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -4274,25 +4214,9 @@ bool I2C_AddRequest(DSCI2C *d)
 	d->next = 0;
 	d->ready = false;
 
-	if (d->wdata2 == 0) d->wlen2 = 0;
+	d->ready = false;
 
-	__disable_irq();
-
-	if (twi_lastDsc == 0)
-	{
-		twi_lastDsc = d;
-
-		__enable_irq();
-
-		return I2C_Write(d);
-	}
-	else
-	{
-		twi_lastDsc->next = d;
-		twi_lastDsc = d;
-
-		__enable_irq();
-	};
+	i2c_ReqList.Add(d);
 
 #else
 
@@ -4359,88 +4283,6 @@ bool I2C_AddRequest(DSCI2C *d)
 
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
-bool I2C_Update()
-{
-	bool result = false;
-
-#ifdef CPU_SAME53
-
-#elif defined(CPU_XMC48)
-
-	using namespace HW;
-
-	static TM32 tm;
-
-	__disable_irq();
-
-	if (twi_dsc != 0)
-	{
-		if (I2C->PSR_IICMode & (PCR|NACK|ACK|RIF|AIF))
-		{
-			tm.Reset();
-		}
-		else if (tm.Check(10))
-		{
-			result = true;
-
-			HW::Peripheral_Disable(I2C_PID);
-
-			I2C_Init();
-
-			twi_dsc->ready = true;
-			twi_dsc->readedLen = twi_dsc->rlen - twi_rdCount;
-
-			DSCI2C *ndsc = twi_dsc->next;
-
-			if (ndsc != 0)
-			{
-				twi_dsc->next = 0;
-				twi_dsc = ndsc;
-
-				twi_dsc->ready = false;
-				twi_dsc->ack = false;
-				twi_dsc->readedLen = 0;
-
-				twi_wrPtr = (byte*)twi_dsc->wdata;	
-				twi_rdPtr = (byte*)twi_dsc->rdata;	
-				twi_wrPtr2 = (byte*)twi_dsc->wdata2;	
-				twi_wrCount = twi_dsc->wlen;
-				twi_wrCount2 = twi_dsc->wlen2;
-				twi_rdCount = twi_dsc->rlen;
-				twi_adr = twi_dsc->adr;
-
-				if (twi_wrPtr2 == 0) twi_wrCount2 = 0;
-
-				I2C->PSCR = ~0;//RIF|AIF|TBIF|ACK|NACK|PCR;
-
-				I2C->CCR |= RIEN|AIEN;
-				I2C->PCR_IICMode |= PCRIEN|NACKIEN|ARLIEN|SRRIEN|ERRIEN|ACKIEN;
-
-				I2C->TBUF[0] = TDF_MASTER_START | (twi_dsc->adr << 1) | ((twi_wrCount == 0) ? 1 : 0);
-			}
-			else
-			{
-				I2C->CCR = I2C__CCR;
-				I2C->PCR_IICMode = I2C__PCR;
-
-				twi_lastDsc = twi_dsc = 0;
-			};
-		};
-	}
-	else
-	{
-		tm.Reset();
-	};
-	
-	__enable_irq();
-
-#endif
-
-	return result;
-}
-
-//++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-
 static void I2C_Init()
 {
 #ifndef WIN32
@@ -4453,7 +4295,8 @@ static void I2C_Init()
 
 		MCLK->APBBMASK |= APBB_SERCOM3;
 
-		PIO_I2C->SetWRCONFIG(SDA|SCL, PORT_PMUX(2)|PORT_WRPINCFG|PORT_PMUXEN|PORT_WRPMUX);
+		PIO_I2C->SetWRCONFIG(SCL|SDA, PORT_PMUX_C | PORT_PMUXEN | PORT_WRPMUX | PORT_PULLEN | PORT_WRPINCFG);
+		PIO_I2C->SET(SCL|SDA);
 
 		I2C->CTRLA = I2C_SWRST;
 
@@ -4462,8 +4305,8 @@ static void I2C_Init()
 		I2C->CTRLA = SERCOM_MODE_I2C_MASTER;
 
 		I2C->CTRLA = SERCOM_MODE_I2C_MASTER|I2C_INACTOUT_205US|I2C_SPEED_SM;
-		I2C->CTRLB = 0;
-		I2C->BAUD = 0x0018;
+		I2C->CTRLB = I2C_SMEN;
+		I2C->BAUD = 0x3030;
 
 		I2C->CTRLA |= I2C_ENABLE;
 
@@ -4471,16 +4314,6 @@ static void I2C_Init()
 
 		I2C->STATUS = 0;
 		I2C->STATUS.BUSSTATE = BUSSTATE_IDLE;
-
-		VectorTableExt[SERCOM3_0_IRQ] = I2C_Handler;
-		VectorTableExt[SERCOM3_1_IRQ] = I2C_Handler;
-		VectorTableExt[SERCOM3_3_IRQ] = I2C_Handler;
-		CM4::NVIC->CLR_PR(SERCOM3_0_IRQ);
-		CM4::NVIC->CLR_PR(SERCOM3_1_IRQ);
-		CM4::NVIC->CLR_PR(SERCOM3_3_IRQ);
-		CM4::NVIC->SET_ER(SERCOM3_0_IRQ);
-		CM4::NVIC->SET_ER(SERCOM3_1_IRQ);
-		CM4::NVIC->SET_ER(SERCOM3_3_IRQ);
 
 	#elif defined(CPU_XMC48)
 
@@ -4603,6 +4436,15 @@ void SetClock(const RTC &t)
 
 static __irq void Clock_IRQ()
 {
+
+#ifdef CPU_SAME53	
+
+	timeBDC.msec = (timeBDC.msec < 500) ? 0 : 999;
+
+	HW::EIC->INTFLAG = 1 << CLOCK_EXTINT;
+
+#elif defined(CPU_XMC48)
+
 	if (HW::SCU_HIBERNATE->HDSTAT & SCU_HIBERNATE_HDSTAT_ULPWDG_Msk)
 	{
 		if ((HW::SCU_GENERAL->MIRRSTS & SCU_GENERAL_MIRRSTS_HDCLR_Msk) == 0)	HW::SCU_HIBERNATE->HDCLR = SCU_HIBERNATE_HDCLR_ULPWDG_Msk;
@@ -4613,6 +4455,8 @@ static __irq void Clock_IRQ()
 	};
 
 	HW::SCU_GCU->SRCLR = SCU_INTERRUPT_SRCLR_PI_Msk;
+
+#endif
 }
 
 //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -4651,12 +4495,40 @@ static void InitClock()
 	CM4::NVIC->CLR_PR(CLOCK_IRQ);
 	CM4::NVIC->SET_ER(CLOCK_IRQ);	
 
+#ifdef CPU_SAME53	
+
+	using namespace HW;
+
+	PIO_RTC->SetWRCONFIG(RTCINT, PORT_PMUX_A|PORT_WRPINCFG|PORT_PMUXEN|PORT_WRPMUX|PORT_INEN);
+
+	if ((EIC->CTRLA & EIC_ENABLE) == 0)
+	{
+		EIC->CTRLA = EIC_SWRST;
+		while(EIC->SYNCBUSY);
+	}
+	else
+	{
+		EIC->CTRLA = 0;
+		while(EIC->SYNCBUSY);
+	};
+
+	EIC->EVCTRL &= ~(1 << CLOCK_EXTINT);
+	EIC->SetConfig(CLOCK_EXTINT, 1, EIC_SENSE_FALL);
+	EIC->ASYNCH |= 1<<CLOCK_EXTINT;
+	EIC->INTENSET = 1 << CLOCK_EXTINT;
+	EIC->CTRLA = EIC_ENABLE;
+
+#elif defined(CPU_XMC48)
+
 	HW::RTC->CTR = (0x7FFFUL << RTC_CTR_DIV_Pos) | RTC_CTR_ENB_Msk;
 
 	while (HW::SCU_GCU->MIRRSTS & SCU_GENERAL_MIRRSTS_RTC_MSKSR_Msk);
 
 	HW::RTC->MSKSR = RTC_MSKSR_MPSE_Msk;
 	HW::SCU_GCU->SRMSK = SCU_INTERRUPT_SRMSK_PI_Msk;
+
+#endif
+
 }
 
 #endif
@@ -4954,307 +4826,11 @@ static void WDT_Init()
 
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
-static u32 rotCount = 0;
-
-static __irq void RotTrmIRQ()
-{
-#ifdef CPU_SAME53
-
-	//PIO_SYNCROT->WBIT(ROT, !(PIO_SYNCROT->ODSR & ROT));
-	rotCount++;
-
-	HW::PIOA->BCLR(15);
-
-	//if (rotCount >= pulsesPerHeadRound)
-	//{
-	//	SyncTmr.CCR = SWTRG;
-	//	rotCount = 0;
-	//	
-	//	HW::PIOA->BSET(15);
-	//};
-
-//	u32 tmp = RotTmr.SR;
-
-#elif defined(CPU_XMC48)
-#endif
-}
+//++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
-void Set_Sync_Rot(u16 RPS, u16 samplePerRound)
-{
-#ifndef WIN32
-
-	u32 t = RPS;
-
-	if (t == 0) t = 100;
-
-	if (samplePerRound < 8) { samplePerRound = 8; };
-
-	t *= samplePerRound;
-	
-	t = (100000000 + t/2) / t;
-	
-	t = US2SRT(t);
-
-	if (t > 0xFFFF) t = 0xFFFF;
-
-	//u16 r = (samplePerRound + 36) / 72;
-	
-	u32 r = ((u32)RPS * pulsesPerHeadRoundFix4) >> 4;
-
-	if (r != 0)
-	{
-		r = US2SRT((100000000 + r/2) / r);
-	};
-
-	if (r > 0xFFFF) r = 0xFFFF;
-
-	#ifdef CPU_SAME53	
-
-		SyncTmr->PER = t;
-		SyncTmr->CC[0] = US2SRT(10); 
-
-		SyncTmr->CTRLA = (t != 0) ? TCC_ENABLE : 0;
-
-		RotTmr->CC[0] = r;
-
-		RotTmr->CTRLA = (r != 0) ? TCC_ENABLE : 0;
-
-		SyncTmr->CTRLBSET = TCC_CMD_RETRIGGER;
-		RotTmr->CTRLBSET = TCC_CMD_RETRIGGER;
-
-	#elif defined(CPU_XMC48)
-
-		PIO_SYNC->ModePin(PIN_SYNC, A3PP);
-		PIO_ROT->ModePin(PIN_ROT, A3PP);
-
-		HW::CCU_Enable(SyncRotCCU_PID);
-
-		SyncRotCCU->GCTRL = 0;
-
-		SyncRotCCU->GIDLC = SyncRot_GIDLC;
-
-		SyncTmr->PRS = t-1;
-		SyncTmr->CRS = US2SRT(10)-1;
-		SyncTmr->PSC = SyncRot_PSC; 
-		SyncTmr->PSL = 1; 
-
-		if (t != 0) { SyncTmr->TCSET = CC4_TRBS; } else { SyncTmr->TCCLR = CC4_TRBC; };
-
-		RotTmr->PRS = r-1;
-		RotTmr->CRS = r/2;
-		RotTmr->PSC = SyncRot_PSC; 
-		RotTmr->TC = CC4_TCM;
-
-		if (r != 0) { RotTmr->TCSET = CC4_TRBS; } else { RotTmr->TCCLR = CC4_TRBC; };
-
-		SyncRotCCU->GCSS = Sync_GCSS|Rot_GCSS;  
-
-	#endif
-
-#endif
-}
-
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-#ifndef WIN32
-
-static void Init_Sync_Rot()
-{
-	using namespace HW;
-
-#ifdef CPU_SAME53	
-
-
-	PIO_SYNC->SetWRCONFIG(SYNC, PORT_PMUX(5)|PORT_WRPINCFG|PORT_PMUXEN|PORT_WRPMUX|PORT_INEN);
-	PIO_ROT->SetWRCONFIG(ROT,	PORT_PMUX(5)|PORT_WRPINCFG|PORT_PMUXEN|PORT_WRPMUX|PORT_INEN);	
-
-	HW::GCLK->PCHCTRL[GCLK_TCC2_TCC3]	= GCLK_GEN(GEN_1M)|GCLK_CHEN;
-	HW::GCLK->PCHCTRL[GCLK_TCC4]		= GCLK_GEN(GEN_1M)|GCLK_CHEN;
-
-	HW::MCLK->APBCMASK |= APBC_TCC3;
-	HW::MCLK->APBDMASK |= APBD_TCC4;
-
-	//PIO_MANCH->DIRSET = L1|H1|L2|H2;
-
-	SyncTmr->CTRLA = TCC_SWRST;
-
-	while(SyncTmr->SYNCBUSY);
-
-	SyncTmr->CTRLA = 0;
-	SyncTmr->WAVE = TCC_WAVEGEN_NPWM;//|TCC_POL0;
-	SyncTmr->DRVCTRL = 0;//TCC_NRE0|TCC_NRE1|TCC_NRV0|TCC_NRV1;
-	SyncTmr->PER = 250;
-	SyncTmr->CC[0] = 2; 
-	//SyncTmr->CC[1] = 2; 
-
-	SyncTmr->EVCTRL = 0;
-
-	SyncTmr->CTRLA = TCC_ENABLE;
-
-	RotTmr->CTRLA = TCC_SWRST;
-
-	while(RotTmr->SYNCBUSY);
-
-	RotTmr->CTRLA = 0;
-	RotTmr->WAVE = TCC_WAVEGEN_MFRQ;//|TCC_POL0;
-	RotTmr->DRVCTRL = 0;//TCC_NRE0|TCC_NRE1|TCC_NRV0|TCC_NRV1;
-	RotTmr->CC[0] = 250;
-	//RotTmr->CC[0] = 2; 
-	//RotTmr->CC[1] = 2; 
-
-	RotTmr->EVCTRL = 0;
-
-	RotTmr->CTRLA = 0;//TCC_ENABLE;
-	
-	SyncTmr->CTRLBSET = TCC_CMD_RETRIGGER;
-	RotTmr->CTRLBSET = TCC_CMD_RETRIGGER;
-
-
-#elif defined(CPU_XMC48)
-
-	PIO_SYNC->ModePin(PIN_SYNC, A3PP);
-	PIO_ROT->ModePin(PIN_ROT, A3PP);
-
-	HW::CCU_Enable(SyncRotCCU_PID);
-
-	SyncRotCCU->GCTRL = 0;
-
-	SyncRotCCU->GIDLC = SyncRot_GIDLC;
-
-	SyncTmr->PRS = US2SRT(60)-1;
-	SyncTmr->CRS = US2SRT(10)-1;
-	SyncTmr->PSC = SyncRot_PSC; 
-	SyncTmr->PSL = 1;
-	SyncTmr->TCSET = CC4_TRBS;
-
-	RotTmr->PRS = ~0;
-	RotTmr->CRS = 0x7FFF;
-	RotTmr->PSC = SyncRot_PSC; 
-	RotTmr->TC = CC4_TCM;
-	RotTmr->TCSET = CC4_TRBS;
-
-	SyncRotCCU->GCSS = Sync_GCSS|Rot_GCSS;  
-
-#endif
-}
-
-//++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-
-static __irq void ShaftIRQ()
-{
-	Pin_ShaftIRQ_Set();
-
-#ifdef CPU_SAME53	
-
-	HW::EIC->INTFLAG = 1<<SHAFT_EXTINT;
-
-	SyncTmr->CTRLBSET = TCC_CMD_RETRIGGER;
-
-#elif defined(CPU_XMC48)
-	
-	//SyncTmr->TCCLR = CC4_TCC;
-
-	SyncTmr->TCCLR = CC4_TRBC;
-	SyncTmr->TIMER = SyncTmr->PR >> 1;
-	SyncTmr->TCSET = CC4_TRBS;
-
-#endif
-
-	shaftCounter++;
-	curShaftCounter++;
-
-	u32 tm = GetMilliseconds();
-	u32 dt = tm - shaftPrevTime;
-
-	if (dt >= 1000)
-	{
-		shaftPrevTime = tm;
-		shaftCount = shaftCounter;
-		shaftTime = dt;
-		shaftCounter = 0;
-	};
-
-	rotCount = 0;
-
-	Pin_ShaftIRQ_Clr();
-}
-
-//++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-
-static void UpdateShaft()
-{
-	if (shaftCount != 0)
-	{
-		shaftRPS = shaftCount * 100000 / shaftTime;
-		
-		shaftCount = 0;
-	}
-	else if ((GetMilliseconds() - shaftPrevTime) > 1500)
-	{
-		shaftRPS = 0;
-	};
-}
-
-#endif
-
-//++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-
-u16 GetShaftState()
-{
-#ifndef WIN32
-	return PIO_SHAFT->TBCLR(PIN_SHAFT);
-#else
-	return 0;
-#endif
-}
-
-//++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-#ifndef WIN32
-
-static void InitShaft()
-{
-	using namespace HW;
-
-	VectorTableExt[IRQ_SHAFT] = ShaftIRQ;
-	CM4::NVIC->CLR_PR(IRQ_SHAFT);
-	CM4::NVIC->SET_ER(IRQ_SHAFT);	
-
-#ifdef CPU_SAME53	
-
-	EIC->CTRLA = 0;
-	while(EIC->SYNCBUSY);
-
-	EIC->EVCTRL |= EIC_EXTINT0<<SHAFT_EXTINT;
-	EIC->SetConfig(SHAFT_EXTINT, 1, EIC_SENSE_RISE);
-	EIC->INTENSET = EIC_EXTINT0<<SHAFT_EXTINT;
-	EIC->CTRLA = EIC_ENABLE;
-
-	PIO_SHAFT->SetWRCONFIG(SHAFT, PORT_PMUX(0)|PORT_WRPINCFG|PORT_PMUXEN|PORT_WRPMUX|PORT_INEN);
-
-#elif defined(CPU_XMC48)
-
-	PIO_SHAFT->ModePin(PIN_SHAFT, I1DPD);
-
-	// Event Request Select (ERS)
-	
-	ERU0->EXISEL = 2<<ERU_EXISEL_EXS3B_Pos;
-	
-	// Event Trigger Logic (ETL)
-
-	ERU0->EXICON[3] = ERU_PE|ERU_RE|ERU_OCS(0)|ERU_SS_B;
-
-	// Cross Connect Matrix
-
-	// Output Gating Unit (OGU)
-
-	ERU0->EXOCON[0] = ERU_GP(1);
-
-#endif
-
-}
-
-#endif
 
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
@@ -5945,9 +5521,9 @@ static void SPI_Init()
 
 		MCLK->APBAMASK |= APBA_SERCOM0;
 
-		PIO_SPCK->SetWRCONFIG(SPCK, PORT_PMUX(2)|PORT_WRPINCFG|PORT_PMUXEN|PORT_WRPMUX);
-		PIO_MOSI->SetWRCONFIG(MOSI, PORT_PMUX(2)|PORT_WRPINCFG|PORT_PMUXEN|PORT_WRPMUX);
-		PIO_MISO->SetWRCONFIG(MISO, PORT_PMUX(2)|PORT_WRPINCFG|PORT_PMUXEN|PORT_WRPMUX);
+		PIO_SPCK->SetWRCONFIG(SPCK, PORT_PMUX_C|PORT_WRPINCFG|PORT_PMUXEN|PORT_WRPMUX);
+		PIO_MOSI->SetWRCONFIG(MOSI, PORT_PMUX_C|PORT_WRPINCFG|PORT_PMUXEN|PORT_WRPMUX);
+		PIO_MISO->SetWRCONFIG(MISO, PORT_PMUX_C|PORT_WRPINCFG|PORT_PMUXEN|PORT_WRPMUX);
 		PIO_CS->DIRSET = CS0|CS1; 
 		PIO_CS->SetWRCONFIG(CS0|CS1, PORT_WRPINCFG|PORT_WRPMUX);
 		PIO_CS->SET(CS0|CS1); 
@@ -6534,10 +6110,6 @@ void InitHardware()
 
 	InitManTransmit2();
 
-	Init_Sync_Rot();
-
-	InitShaft();
-
 	EnableVCORE();
 
 	WDT_Init();
@@ -6564,8 +6136,8 @@ void UpdateHardware()
 	enum C { S = (__LINE__+3) };
 	switch(i++)
 	{
-		CALL( UpdateShaft();	);
 		CALL( SPI_Update();		);
+		CALL( I2C_Update();		);
 	};
 
 	i = (i > (__LINE__-S-3)) ? 0 : i;
