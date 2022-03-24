@@ -9,6 +9,7 @@
 #include "req.h"
 #include "list.h"
 #include "PointerCRC.h"
+#include "SEGGER_RTT.h"
 
 #ifdef WIN32
 
@@ -2993,6 +2994,8 @@ static void Update()
 
 int main()
 {
+	SEGGER_RTT_WriteString(0, RTT_CTRL_TEXT_WHITE "main() start ...\n");
+
 //	static bool c = true;
 
 	//static byte buf[8192];

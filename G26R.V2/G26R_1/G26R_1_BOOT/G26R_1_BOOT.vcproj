@@ -79,14 +79,6 @@
 				>
 			</File>
 			<File
-				RelativePath=".\cpp\SEGGER_RTT.h"
-				>
-			</File>
-			<File
-				RelativePath=".\cpp\SEGGER_RTT_Conf.h"
-				>
-			</File>
-			<File
 				RelativePath=".\cpp\system.h"
 				>
 			</File>
@@ -112,14 +104,6 @@
 				>
 			</File>
 			<File
-				RelativePath=".\cpp\SEGGER_RTT.cpp"
-				>
-			</File>
-			<File
-				RelativePath=".\cpp\SEGGER_RTT_printf.cpp"
-				>
-			</File>
-			<File
 				RelativePath=".\cpp\system.cpp"
 				>
 			</File>
@@ -133,7 +117,7 @@
 			>
 		</File>
 		<File
-			RelativePath=".\cpp\startup_CM4.s"
+			RelativePath="..\G26R_1_MEM\cpp\startup_CM4.s"
 			>
 		</File>
 	</Files>

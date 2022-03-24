@@ -7,6 +7,7 @@
 #include "PointerCRC.h"
 
 #include "hardware.h"
+#include "SEGGER_RTT.h"
 
 #ifdef WIN32
 
@@ -814,6 +815,10 @@ extern "C" void SystemInit()
 
 //	__breakpoint(0);
 
+	SEGGER_RTT_Init();
+
+	SEGGER_RTT_WriteString(0, RTT_CTRL_TEXT_BRIGHT_YELLOW "SystemInit ... ");
+
 	#ifdef CPU_SAME53	
 
 		HW::PIOA->DIRSET = (1<<27)|(1<<25)|(1<<24)|(1<<16)|0xFF;
@@ -1130,6 +1135,7 @@ extern "C" void SystemInit()
   /* Enable unaligned memory access - SCB_CCR.UNALIGN_TRP = 0 */
 	CM4::SCB->CCR &= ~(SCB_CCR_UNALIGN_TRP_Msk);
 
+	SEGGER_RTT_WriteString(0, RTT_CTRL_TEXT_BRIGHT_GREEN "OK\n");
 }
 
 #endif
@@ -1274,6 +1280,8 @@ static byte clog2(u32 v) {byte r = 0; while (v>>=1) {r++;}; return r;}
 static u32 chipSelect[NAND_MAX_CHIP] = { FCS0, FCS1, FCS2, FCS3 };
 
 #define maskChipSelect (FCS0|FCS1|FCS2|FCS3)
+
+static const char* chipRefDes[NAND_MAX_CHIP] = { "DD9 ", "DD11", "DD10", "DD12" };
 
 #endif
 
@@ -2154,6 +2162,8 @@ DWORD WINAPI NAND_ReadThread(LPVOID lpParam)
 
 static void NAND_Init()
 {
+	SEGGER_RTT_WriteString(0, RTT_CTRL_TEXT_BRIGHT_YELLOW "NAND Flash Init ... \n");
+
 #ifndef WIN32
 
 	using namespace HW;
@@ -2247,10 +2257,16 @@ static void NAND_Init()
 		checkBuf[i+8] = ~(1 << i);
 	};
 
-	for(byte chip = 0; chip < NAND_MAX_CHIP; chip ++)
+	for(u32 chip = 0; chip < NAND_MAX_CHIP; chip ++)
 	{
+		SEGGER_RTT_printf(0, RTT_CTRL_TEXT_WHITE "Chip %u - %s ... ", chip, chipRefDes[chip]);
+
 		NAND_Chip_Select(chip);
 		ResetNand();
+
+		byte bitMask = 0;
+
+#ifdef CPU_XMC48
 
 		for (byte i = 0; i < ArraySize(checkBuf); i++)
 		{
@@ -2258,7 +2274,6 @@ static void NAND_Init()
 			readBuf[i] = NAND_ADR_READ();
 		};
 
-		byte bitMask = 0;
 
 		for (byte i = 0; i < 8; i++)
 		{
@@ -2267,6 +2282,7 @@ static void NAND_Init()
 				bitMask |= 1 << i;
 			};
 		};
+#endif
 
 		nandSize.chipDataBusMask[chip] = ~bitMask;
 	
@@ -2274,14 +2290,25 @@ static void NAND_Init()
 
 		NAND_Read_ID(&id);
 
+		u32 chipSize = 0;
+
 		if((id.maker == 0xEC) && (id.device == 0xD3))
 		{
+			byte col_bits = id.pageSize + 10;
+			byte page_off = col_bits;
+			byte chip_off = id.blockSize + 16;
+			byte page_bits = chip_off - page_off;
+			byte block_bits = (id.planeSize + 23 + id.planeNumber) - chip_off;
+
+			chipSize = 1UL << (col_bits + page_bits + block_bits - 20);
+
 			if (nandSize.ch == 0)
 			{
-				FLADR::PAGE_OFF			= FLADR::COL_BITS = id.pageSize + 10;
-				FLADR::CHIP_OFF			= id.blockSize + 16;
-				FLADR::PAGE_BITS		= FLADR::CHIP_OFF - FLADR::PAGE_OFF;
-				FLADR::BLOCK_BITS		= (id.planeSize + 23 + id.planeNumber) - FLADR::CHIP_OFF;
+				FLADR::COL_BITS 	= col_bits;
+				FLADR::PAGE_OFF		= page_off;		
+				FLADR::CHIP_OFF		= chip_off;
+				FLADR::PAGE_BITS	= page_bits;
+				FLADR::BLOCK_BITS	= block_bits;
 
 				nandSize.ch = 1ULL << (FLADR::COL_BITS+FLADR::PAGE_BITS+FLADR::BLOCK_BITS);
 			};
@@ -2291,9 +2318,13 @@ static void NAND_Init()
 			if (bitMask == 0) { nandSize.mask |= (1 << chip); };
 
 			nandSize.integrityCRC[chip] = 0;
+
+			SEGGER_RTT_printf(0, "Samsung - %u MB - ", chipSize);
 		}
 		else if((id.maker == 0x2C) && (id.device == 0x68))
 		{
+			SEGGER_RTT_WriteString(0, "Micron - ");
+
 			NAND_Set_Features(1, 5, 0, 0, 0);
 			
 			ResetNand();
@@ -2308,14 +2339,25 @@ static void NAND_Init()
 
 			nandSize.integrityCRC[chip] = crc;
 
+			SEGGER_RTT_printf(0, "CRC:%04X - ", crc);
+
 			if (np.integrityCRC == crc/* || np.integrityCRC == 0xA61F*/)
 			{
+				byte col_bits = clog2(np.numberDataBytesPerPage);
+				byte page_off = col_bits;
+				byte page_bits = clog2(np.numberPagesPerBlock);
+				byte chip_off = page_off + page_bits;
+				byte block_bits = clog2(np.numberBlocksPerLUN * np.numberLUNsPerChip);
+
+				chipSize = 1UL << (col_bits + page_bits + block_bits - 20);
+
 				if (nandSize.mask == 0)
 				{
-					FLADR::PAGE_OFF			= FLADR::COL_BITS = clog2(np.numberDataBytesPerPage);
-					FLADR::PAGE_BITS		= clog2(np.numberPagesPerBlock);
-					FLADR::CHIP_OFF			= FLADR::PAGE_OFF + FLADR::PAGE_BITS;
-					FLADR::BLOCK_BITS		= clog2(np.numberBlocksPerLUN * np.numberLUNsPerChip);
+					FLADR::COL_BITS 	= col_bits;
+					FLADR::PAGE_OFF		= page_off;		
+					FLADR::CHIP_OFF		= chip_off;
+					FLADR::PAGE_BITS	= page_bits;
+					FLADR::BLOCK_BITS	= block_bits;
 
 					nandSize.ch = 1ULL << (FLADR::COL_BITS+FLADR::PAGE_BITS+FLADR::BLOCK_BITS);
 				};
@@ -2323,8 +2365,13 @@ static void NAND_Init()
 				nandSize.fl += nandSize.ch;
 				
 				if (bitMask == 0) { nandSize.mask |= (1 << chip); };
+				
+				SEGGER_RTT_printf(0, "%u MB - ", chipSize);
 			};
+
 		};
+
+		SEGGER_RTT_WriteString(0, (nandSize.mask & (1 << chip)) ? (RTT_CTRL_TEXT_BRIGHT_GREEN "OK\n") : (RTT_CTRL_TEXT_BRIGHT_RED "!!! ERROR !!!\n"));
 	};
 
 	if (nandSize.ch != 0)
@@ -4366,6 +4413,8 @@ static void I2C_Init()
 	CloseHandle(h);
 
 #endif
+
+	SEGGER_RTT_WriteString(0, RTT_CTRL_TEXT_BRIGHT_CYAN "I2C Init ... OK\n");
 }
 
 //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -4529,6 +4578,7 @@ static void InitClock()
 
 #endif
 
+	SEGGER_RTT_WriteString(0, RTT_CTRL_TEXT_BRIGHT_YELLOW "Clock Init ... OK\n");
 }
 
 #endif
@@ -5629,6 +5679,8 @@ static void SPI_Init()
 	CloseHandle(h);
 
 #endif
+
+	SEGGER_RTT_WriteString(0, RTT_CTRL_TEXT_BRIGHT_GREEN "SPI Init ... OK\n");
 }
 
 //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -6065,9 +6117,30 @@ int Printf(u32 xx, u32 yy, byte c, const char *format, ... )
 
 void InitHardware()
 {
+	SEGGER_RTT_WriteString(0, RTT_CTRL_TEXT_BRIGHT_YELLOW "Hardware Init ... \n");
+
 #ifdef CPU_SAME53	
 	
 	using namespace HW;
+
+	#ifdef _DEBUG
+
+		SEGGER_RTT_WriteString(0, RTT_CTRL_TEXT_BRIGHT_GREEN "Disable WDT ... ");
+
+		HW::MCLK->APBAMASK |= APBA_WDT;
+
+		while(HW::WDT->SYNCBUSY);
+
+		if (HW::WDT->CTRLA & WDT_ENABLE)
+		{
+			HW::WDT->CTRLA = 0;
+			
+			while(HW::WDT->SYNCBUSY);
+		};
+
+		SEGGER_RTT_WriteString(0, "OK\n");
+
+	#endif
 
 //	HW::PIOA->BSET(13);
 

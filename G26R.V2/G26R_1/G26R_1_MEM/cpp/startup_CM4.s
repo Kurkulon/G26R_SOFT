@@ -49,15 +49,26 @@ Heap_Mem        SPACE   Heap_Size
 __heap_limit
 
 
-VecTableIntSize	EQU		16*4	
-VecTableExtSize	EQU		137*4	
-SCB_VTOR		EQU		0xE000ED08
+VecTableIntSize		EQU		16*4	
+VecTableExtSize		EQU		137*4	
+SCB_VTOR			EQU		0xE000ED08
+SeggerRttCB_size	EQU		0x500
 
 				AREA	||.ARM.__AT_0x20000000||, DATA, NOINIT, ALIGN=7
+                
                 EXPORT  VectorTableInt
                 EXPORT  VectorTableExt
+                
 VectorTableInt	SPACE	VecTableIntSize				
-VectorTableExt	SPACE	VecTableExtSize				
+VectorTableExt	SPACE	VecTableExtSize		
+
+;                EXPORT  BOOT_CHECK_REGISTER
+;BOOT_CHECK_REGISTER		SPACE 4             
+
+				AREA	||.ARM.__AT_0x20000300||, DATA, NOINIT, ALIGN=7
+                EXPORT  SeggerRttCB
+SeggerRttCB		SPACE	SeggerRttCB_size		
+		
 
                 PRESERVE8
                 THUMB

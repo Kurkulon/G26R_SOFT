@@ -1,6 +1,8 @@
 #include "time.h"
 #include "core.h"
 
+#include "SEGGER_RTT.h"
+
 #ifdef WIN32
 
 #include <windows.h>
@@ -212,6 +214,8 @@ static void InitTimer()
 	__enable_irq();
 
 #endif
+
+	SEGGER_RTT_WriteString(0, RTT_CTRL_TEXT_BRIGHT_YELLOW "System Timer Init ... \n");
 }
 
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -266,6 +270,8 @@ void RTT_Init()
 	};
 
 #endif
+
+	SEGGER_RTT_WriteString(0, RTT_CTRL_TEXT_BRIGHT_YELLOW "RTT Init ... \n");
 }
 
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++

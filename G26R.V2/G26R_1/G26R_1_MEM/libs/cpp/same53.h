@@ -752,6 +752,8 @@ namespace T_HW
 	#define	PORT_HWSEL_LO      	(0<<31)
 	#define	PORT_HWSEL_HI      	(1UL<<31)
 
+	//++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
 	struct S_PORT
 	{
 		RW32	DIR;         		/**< \brief Offset: 0x00 (R/W 32) Data Direction */
@@ -2358,6 +2360,25 @@ namespace T_HW
 
 	//++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
+	struct S_RSTC
+	{
+		RO8   RCAUSE;        /**< Offset: 0x00 (R/   8) Reset Cause */
+		RO8							z__Reserved1[0x01];
+		RO8   BKUPEXIT;      /**< Offset: 0x02 (R/   8) Backup Exit Source */ 
+	};
+
+	#define RSTC_POR    	(1<<0)   /**< (RSTC_RCAUSE) Power On Reset Position */
+	#define RSTC_BODCORE	(1<<1)   /**< (RSTC_RCAUSE) Brown Out CORE Detector Reset Position */
+	#define RSTC_BODVDD 	(1<<2)   /**< (RSTC_RCAUSE) Brown Out VDD Detector Reset Position */
+	#define RSTC_NVM    	(1<<3)   /**< (RSTC_RCAUSE) NVM Reset Position */
+	#define RSTC_EXT    	(1<<4)   /**< (RSTC_RCAUSE) External Reset Position */
+	#define RSTC_WDT    	(1<<5)   /**< (RSTC_RCAUSE) Watchdog Reset Position */
+	#define RSTC_SYST   	(1<<6)   /**< (RSTC_RCAUSE) System Reset Request Position */
+	#define RSTC_BACKUP 	(1<<7)   /**< (RSTC_RCAUSE) Backup Reset Position */
+	#define RSTC_RTC    	(1<<1)   /**< (RSTC_BKUPEXIT) Real Timer Counter Interrupt Position */
+	#define RSTC_BBPS   	(1<<2)   /**< (RSTC_BKUPEXIT) Battery Backup Power Switch Position */
+	#define RSTC_HIB    	(1<<7)   /**< (RSTC_BKUPEXIT) Hibernate Position */
+
 };
 
 
@@ -2377,6 +2398,7 @@ namespace HW
 	MK_PTR(PM,			0x40000400);
 	MK_PTR(MCLK,		0x40000800);
 	MK_PTR(WDT,			0x40002000);
+	MK_PTR(RSTC,		0x40000C00);
 	MK_PTR(OSCCTRL,		0x40001000);
 	MK_PTR(OSC32KCTRL,	0x40001400);
 
@@ -2482,9 +2504,9 @@ namespace HW
 
 	inline bool RamCheck(void *ptr)
 	{
-		//u32 v = (u32)ptr;
+		u32 v = (u32)ptr;
 
-		return ((u32)ptr & ~0x20003FFF) == 0; //(v >= 0x20000000 && v < 0x20004000);
+		return (v >= 0x20000000 && v < 0x20030000);
 
 	};
 
@@ -2495,7 +2517,7 @@ namespace HW
 	{
 		//u32 v = (u32)ptr;
 
-		return ((u32)ptr & ~0x1FFFF) == 0; //(v >= 0x000000 && v < 0x20000);
+		return ((u32)ptr & ~0x7FFFF) == 0; //(v >= 0x000000 && v < 0x20000);
 
 	};
 
@@ -2508,6 +2530,11 @@ extern T_HW::AT91_IHP VectorTableExt[137];
 
 extern T_HW::DMADESC DmaTable[32];
 extern T_HW::DMADESC DmaWRB[32];
+
+//extern u32 BOOT_CHECK_REGISTER;
+
+//#define BOOT_CHECK_REGISTER_VALUE_BOOTLOADER	0xAAAAAAAA
+//#define BOOT_CHECK_REGISTER_VALUE_PROGRAMM		0x55555555
 
 #undef MK_PTR
 #undef MKPID

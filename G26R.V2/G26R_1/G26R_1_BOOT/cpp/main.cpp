@@ -652,16 +652,33 @@ static bool HandShake()
 
 	tm.Reset();
 
-	while (!tm.Check(200) && !c)
-	{
-		UpdateEMAC();
+	u32 *flash = (u32*)FLASH_START;
 
-		if (EmacIsEnergyDetected() && EmacIsCableNormal())
+	bool flashCheck = HW::RamCheck((void*)flash[0]) && HW::RomCheck((void*)flash[1]) && (flash[1] >= FLASH_START);
+
+	u32 rcause = HW::RSTC->RCAUSE;
+
+	bool bootCheck = rcause & (RSTC_NVM|RSTC_WDT|RSTC_BACKUP);
+
+	SEGGER_RTT_printf(0, RTT_CTRL_TEXT_BRIGHT_GREEN "HW::RSTC->RCAUSE = 0x%02X\n", rcause);
+
+	if (!flashCheck || bootCheck)
+	{
+		SEGGER_RTT_WriteString(0, RTT_CTRL_TEXT_BRIGHT_CYAN "Start Ethernet handshake ...\n");
+
+		while (!tm.Check(200) && !c)
 		{
-			runEmac = c = true;
-			timeOut.Reset();
-			
-			SEGGER_RTT_printf(0, RTT_CTRL_TEXT_BRIGHT_GREEN "Emac connected - %u ms\n", GetMilliseconds());
+			HW::ResetWDT();
+
+			UpdateEMAC();
+
+			if (EmacIsEnergyDetected() && EmacIsCableNormal())
+			{
+				runEmac = c = true;
+				timeOut.Reset();
+				
+				SEGGER_RTT_printf(0, RTT_CTRL_TEXT_BRIGHT_GREEN "Emac connected - %u ms\n", GetMilliseconds());
+			};
 		};
 	};
 
@@ -876,12 +893,12 @@ static void WDT_Init()
 
 		HW::MCLK->APBAMASK |= APBA_WDT;
 
-		HW::WDT->CONFIG = WDT_WINDOW_CYC512|WDT_PER_CYC1024;
+		HW::WDT->CONFIG = WDT_PER_CYC2048;
 	
 		#ifndef _DEBUG
-		//HW::WDT->CTRLA = WDT_ENABLE|WDT_WEN|WDT_ALWAYSON;
+		HW::WDT->CTRLA = WDT_ENABLE;
 		#else
-		//HW::WDT->CTRLA = WDT_ENABLE|WDT_WEN|WDT_ALWAYSON;
+		HW::WDT->CTRLA = WDT_ENABLE;
 		#endif
 
 		while(HW::WDT->SYNCBUSY);
@@ -901,6 +918,8 @@ static void WDT_Init()
 		#endif
 
 	#endif
+
+	SEGGER_RTT_WriteString(0, RTT_CTRL_TEXT_BRIGHT_GREEN "WDT init ... OK\n");
 }
 
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -911,6 +930,8 @@ int main()
 {
 	//__breakpoint(0);
 
+	SEGGER_RTT_Init();
+
 	SEGGER_RTT_WriteString(0, RTT_CTRL_CLEAR);
 
 	SEGGER_RTT_printf(0, RTT_CTRL_TEXT_BRIGHT_YELLOW "Bootloader Start ... %u ms\n", GetMilliseconds());
@@ -919,7 +940,7 @@ int main()
 
 	Init_time();
 	//RTT_Init();
-	//WDT_Init();
+	WDT_Init();
 
 	InitFlashBuffer();
 	
@@ -937,6 +958,7 @@ int main()
 #elif defined(CPU_XMC48)
 		HW::P5->BSET(7);
 #endif
+		HW::ResetWDT();
 
 		UpdateWriteFlash();
 
@@ -980,7 +1002,7 @@ int main()
 
 	SEGGER_RTT_printf(0, RTT_CTRL_TEXT_BRIGHT_GREEN "Main App Start ... %u ms\n", GetMilliseconds());
 
-	__breakpoint(0);
+	//__breakpoint(0);
 
 	_MainAppStart(FLASH_START);
 

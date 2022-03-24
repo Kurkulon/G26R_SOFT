@@ -1,5 +1,9 @@
+#include "types.h"
+
 #pragma O3
 #pragma Otime
+
+#pragma arm section rwdata = "SEGGER_RTT_RW"
 
 /*********************************************************************
 *              SEGGER MICROCONTROLLER GmbH & Co. KG                  *
@@ -105,6 +109,9 @@ typedef struct {
   volatile int WrOff;                    // Position of next item to be written by either host (down-buffer) or target (up-buffer). Must be volatile since it may be modified by host (down-buffer)
   volatile int RdOff;                    // Position of next item to be read by target (down-buffer) or host (up-buffer). Must be volatile since it may be modified by host (up-buffer)
   int    Flags;                          // Contains configuration flags
+
+  void Init(const char* name, char* pb, int size, int fl) { sName = name; pBuffer = pb; SizeOfBuffer = size; WrOff = 0; RdOff = 0; Flags = fl; }
+
 } RING_BUFFER;
 
 //
@@ -126,25 +133,86 @@ typedef struct {
 *
 **********************************************************************
 */
-//
-// Allocate buffers for channel 0
-//
-static char _acUpBuffer  [BUFFER_SIZE_UP];
-static char _acDownBuffer[BUFFER_SIZE_DOWN];
-//
-// Initialize SEGGER Real-time-Terminal control block (CB)
-//
-static SEGGER_RTT_CB _SEGGER_RTT /*__attribute__((at(0x20000300)))*/ = {
-#if SEGGER_RTT_IN_RAM
-  "SEGGER RTTI",
-#else
-  "SEGGER RTT",
-#endif
-  SEGGER_RTT_MAX_NUM_UP_BUFFERS,
-  SEGGER_RTT_MAX_NUM_DOWN_BUFFERS,
-  {{ "Terminal", &_acUpBuffer[0],   sizeof(_acUpBuffer),   0, 0, SEGGER_RTT_MODE_NO_BLOCK_SKIP }},
-  {{ "Terminal", &_acDownBuffer[0], sizeof(_acDownBuffer), 0, 0, SEGGER_RTT_MODE_NO_BLOCK_SKIP }},
+////
+//// Allocate buffers for channel 0
+////
+//static char _acUpBuffer  [BUFFER_SIZE_UP];
+//static char _acDownBuffer[BUFFER_SIZE_DOWN];
+////
+//// Initialize SEGGER Real-time-Terminal control block (CB)
+////
+//static SEGGER_RTT_CB __SEGGER_RTT /*__attribute__((at(0x20000300)))*/ = {
+//#if SEGGER_RTT_IN_RAM
+//  "SEGGER RTTI",
+//#else
+//  "SEGGER RTT",
+//#endif
+//  SEGGER_RTT_MAX_NUM_UP_BUFFERS,
+//  SEGGER_RTT_MAX_NUM_DOWN_BUFFERS,
+//  {{ "Terminal", &_acUpBuffer[0],   sizeof(_acUpBuffer),   0, 0, SEGGER_RTT_MODE_NO_BLOCK_SKIP }},
+//  {{ "Terminal", &_acDownBuffer[0], sizeof(_acDownBuffer), 0, 0, SEGGER_RTT_MODE_NO_BLOCK_SKIP }},
+//};
+
+struct RTT_CB
+{
+	RTT_CB		*_selfPtr;
+
+	char		acID[16];           	// Initialized to "SEGGER RTT"
+	int         MaxNumUpBuffers;    	// Initialized to SEGGER_RTT_MAX_NUM_UP_BUFFERS (type. 2)
+	int         MaxNumDownBuffers;  	// Initialized to SEGGER_RTT_MAX_NUM_DOWN_BUFFERS (type. 2)
+	RING_BUFFER aUp[1];					// Up buffers, transferring information up from target via debug probe to host
+	RING_BUFFER aDown[1];				// Down buffers, transferring information down from host via debug probe to target
+
+	char 		sName[16];
+	char 		_acUpBuffer  [BUFFER_SIZE_UP];
+	char 		_acDownBuffer[BUFFER_SIZE_DOWN];
+
+	u32			_check;
+
+	void Init()
+	{
+		if (_selfPtr != this || _check != 0x5555AAAA)
+		{
+			sName[0] = 'T';
+			sName[1] = 'e';
+			sName[2] = 'r';
+			sName[3] = 'm';
+			sName[4] = 'i';
+			sName[5] = 'n';
+			sName[6] = 'a';
+			sName[7] = 'l';
+			sName[8] = 0;
+
+			acID[0]		= 'S';
+			acID[1]		= 'E';
+			acID[2]		= 'G';
+			acID[3]		= 'G';
+			acID[4]		= 'E';
+			acID[5]		= 'R';
+			acID[6]		= ' ';
+			acID[7]		= 'R';
+			acID[8]		= 'T';
+			acID[9]		= 'T';
+			acID[10] 	= 'I';
+			acID[11] 	= 0;
+			acID[12] 	= 0;
+			acID[13] 	= 0;
+			acID[14] 	= 0;
+			acID[15] 	= 0;
+
+			MaxNumUpBuffers = 1;	
+			MaxNumDownBuffers = 1;
+			aUp[0].Init(sName, _acUpBuffer, sizeof(_acUpBuffer), SEGGER_RTT_MODE_NO_BLOCK_SKIP);
+			aDown[0].Init(sName, _acDownBuffer, sizeof(_acDownBuffer), SEGGER_RTT_MODE_NO_BLOCK_SKIP);
+
+			_selfPtr = this; _check = 0x5555AAAA;
+		};
+	}
 };
+
+extern RTT_CB SeggerRttCB;
+
+#define _SEGGER_RTT SeggerRttCB
 
 //static char _ActiveTerminal;
 
@@ -534,6 +602,8 @@ int SEGGER_RTT_ConfigDownBuffer(unsigned BufferIndex, const char* sName, char* p
 */
 void SEGGER_RTT_Init (void) {
   _Init();
+
+  _SEGGER_RTT.Init();
 }
 
 /*********************************************************************
