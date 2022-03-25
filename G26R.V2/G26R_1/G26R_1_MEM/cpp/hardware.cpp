@@ -67,8 +67,8 @@ static volatile bool busyWriteThread = false;
 
 #else
 
-#pragma O3
-#pragma Otime
+//#pragma O3
+//#pragma Otime
 
 #endif 
 
@@ -3213,6 +3213,8 @@ static void InitManTransmit()
 {
 	using namespace HW;
 
+	SEGGER_RTT_WriteString(0, RTT_CTRL_TEXT_BRIGHT_CYAN "Manchester transmit Init ... ");
+
 	VectorTableExt[MANT_IRQ] = ManTrmIRQ;
 	CM4::NVIC->CLR_PR(MANT_IRQ);
 	CM4::NVIC->SET_ER(MANT_IRQ);
@@ -3261,6 +3263,8 @@ static void InitManTransmit()
 #endif
 
 	ManDisable();
+
+	SEGGER_RTT_WriteString(0, "OK\n");
 }
 
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -3572,6 +3576,8 @@ static void InitManTransmit2()
 
 	using namespace HW;
 
+	SEGGER_RTT_WriteString(0, RTT_CTRL_TEXT_BRIGHT_YELLOW "Manchester transmit2 Init ... ");
+
 	VectorTableExt[MANT_IRQ] = ManTrmIRQ2;
 	CM4::NVIC->CLR_PR(MANT_IRQ);
 	CM4::NVIC->SET_ER(MANT_IRQ);
@@ -3652,6 +3658,7 @@ static void InitManTransmit2()
 
 #endif
 
+	SEGGER_RTT_WriteString(0, "OK\n");
 }
 
 #endif
@@ -3852,6 +3859,8 @@ static void InitManRecieve()
 {
 	using namespace HW;
 
+	SEGGER_RTT_WriteString(0, RTT_CTRL_TEXT_BRIGHT_GREEN "Manchester transmit Init ... ");
+
 	VectorTableExt[MANR_IRQ] = ManRcvIRQ2;
 	CM4::NVIC->CLR_PR(MANR_IRQ);
 	CM4::NVIC->SET_ER(MANR_IRQ);	
@@ -3966,6 +3975,7 @@ static void InitManRecieve()
 
 #endif
 
+	SEGGER_RTT_WriteString(0, "OK\n");
 }
 
 #endif
@@ -4089,11 +4099,9 @@ bool I2C_Update()
 
 					__disable_irq();
 
-					
-					HW::DMAC->CH[I2C_DMACH].CTRLB = DMCH_TRIGACT_BURST|I2C_TRIGSRC_RX;
 					HW::DMAC->CH[I2C_DMACH].INTENCLR = ~0;
 					HW::DMAC->CH[I2C_DMACH].INTFLAG = ~0;
-					HW::DMAC->CH[I2C_DMACH].CTRLA = DMCH_ENABLE;
+					HW::DMAC->CH[I2C_DMACH].CTRLA = DMCH_ENABLE|DMCH_TRIGACT_BURST|I2C_TRIGSRC_RX;
 
 					__enable_irq();
 
@@ -4122,10 +4130,9 @@ bool I2C_Update()
 
 					__disable_irq();
 
-					HW::DMAC->CH[I2C_DMACH].CTRLB = DMCH_TRIGACT_BURST|I2C_TRIGSRC_TX;
 					HW::DMAC->CH[I2C_DMACH].INTENCLR = ~0;
 					HW::DMAC->CH[I2C_DMACH].INTFLAG = ~0;
-					HW::DMAC->CH[I2C_DMACH].CTRLA = DMCH_ENABLE;
+					HW::DMAC->CH[I2C_DMACH].CTRLA = DMCH_ENABLE|DMCH_TRIGACT_BURST|I2C_TRIGSRC_TX;
 
 					__enable_irq();
 
@@ -4170,10 +4177,9 @@ bool I2C_Update()
 
 						__disable_irq();
 
-						HW::DMAC->CH[I2C_DMACH].CTRLB = DMCH_TRIGACT_BURST|I2C_TRIGSRC_RX;
 						HW::DMAC->CH[I2C_DMACH].INTENCLR = ~0;
 						HW::DMAC->CH[I2C_DMACH].INTFLAG = ~0;
-						HW::DMAC->CH[I2C_DMACH].CTRLA = DMCH_ENABLE;
+						HW::DMAC->CH[I2C_DMACH].CTRLA = DMCH_ENABLE|DMCH_TRIGACT_BURST|I2C_TRIGSRC_RX;
 
 						__enable_irq();
 
@@ -4213,6 +4219,8 @@ bool I2C_Update()
 				if (c)
 				{
 					dsc.ack = true;
+
+					dsc.readedLen = rdCount;
 
 					I2C->CTRLB = I2C_SMEN|I2C_ACKACT|I2C_CMD_STOP;
 						
@@ -4336,6 +4344,8 @@ static void I2C_Init()
 
 	using namespace HW;
 
+	SEGGER_RTT_WriteString(0, RTT_CTRL_TEXT_BRIGHT_CYAN "I2C Init ... ");
+
 	#ifdef CPU_SAME53	
 
 		HW::GCLK->PCHCTRL[GCLK_SERCOM3_CORE]	= GCLK_GEN(GEN_25M)|GCLK_CHEN;	// 25 MHz
@@ -4353,7 +4363,7 @@ static void I2C_Init()
 
 		I2C->CTRLA = SERCOM_MODE_I2C_MASTER|I2C_INACTOUT_205US|I2C_SPEED_SM;
 		I2C->CTRLB = I2C_SMEN;
-		I2C->BAUD = 0x3030;
+		I2C->BAUD = 0x0018;
 
 		I2C->CTRLA |= I2C_ENABLE;
 
@@ -4414,7 +4424,7 @@ static void I2C_Init()
 
 #endif
 
-	SEGGER_RTT_WriteString(0, RTT_CTRL_TEXT_BRIGHT_CYAN "I2C Init ... OK\n");
+	SEGGER_RTT_WriteString(0, "OK\n");
 }
 
 //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -4519,6 +4529,8 @@ static void InitClock()
 	
 	RTC t;
 
+	TM32 tm;
+
 	dsc.adr = 0x68;
 	dsc.wdata = &reg;
 	dsc.wlen = 1;
@@ -4527,18 +4539,34 @@ static void InitClock()
 	dsc.wdata2 = 0;
 	dsc.wlen2 = 0;
 
-	I2C_AddRequest(&dsc);
+	SEGGER_RTT_WriteString(0, RTT_CTRL_TEXT_BRIGHT_YELLOW "Sync with DS3232 ... ");
 
-	while (!dsc.ready) { I2C_Update(); };
+	tm.Reset();
 
-	t.sec	= (buf[0]&0xF) + ((buf[0]>>4)*10);
-	t.min	= (buf[1]&0xF) + ((buf[1]>>4)*10);
-	t.hour	= (buf[2]&0xF) + ((buf[2]>>4)*10);
-	t.day	= (buf[4]&0xF) + ((buf[4]>>4)*10);
-	t.mon	= (buf[5]&0xF) + ((buf[5]>>4)*10);
-	t.year	= (buf[6]&0xF) + ((buf[6]>>4)*10) + 2000;
+	if (I2C_AddRequest(&dsc))
+	{
+		while (!(dsc.ready || tm.Check(100))) { I2C_Update(); };
+	};
 
-	SetTime(t);
+	if (dsc.ready && dsc.ack && dsc.readedLen >= dsc.rlen)
+	{
+		t.sec	= (buf[0]&0xF) + ((buf[0]>>4)*10);
+		t.min	= (buf[1]&0xF) + ((buf[1]>>4)*10);
+		t.hour	= (buf[2]&0xF) + ((buf[2]>>4)*10);
+		t.day	= (buf[4]&0xF) + ((buf[4]>>4)*10);
+		t.mon	= (buf[5]&0xF) + ((buf[5]>>4)*10);
+		t.year	= (buf[6]&0xF) + ((buf[6]>>4)*10) + 2000;
+
+		SetTime(t);
+	
+		SEGGER_RTT_WriteString(0, RTT_CTRL_TEXT_BRIGHT_GREEN "OK\n");
+	}
+	else
+	{
+		SEGGER_RTT_WriteString(0, RTT_CTRL_TEXT_BRIGHT_RED "!!! ERROR !!!\n");
+	};
+
+	SEGGER_RTT_WriteString(0, RTT_CTRL_TEXT_BRIGHT_WHITE "Clock Init ... ");
 
 	VectorTableExt[CLOCK_IRQ] = Clock_IRQ;
 	CM4::NVIC->CLR_PR(CLOCK_IRQ);
@@ -4578,7 +4606,7 @@ static void InitClock()
 
 #endif
 
-	SEGGER_RTT_WriteString(0, RTT_CTRL_TEXT_BRIGHT_YELLOW "Clock Init ... OK\n");
+	SEGGER_RTT_WriteString(0, "OK\n");
 }
 
 #endif
@@ -4838,6 +4866,8 @@ static void Init_CRC_CCITT_DMA()
 
 static void WDT_Init()
 {
+	SEGGER_RTT_WriteString(0, RTT_CTRL_TEXT_BRIGHT_WHITE "Manchester transmit Init ... ");
+
 	#ifdef CPU_SAME53	
 
 		//HW::MCLK->APBAMASK |= APBA_WDT;
@@ -4871,6 +4901,8 @@ static void WDT_Init()
 		#endif
 
 	#endif
+
+	SEGGER_RTT_WriteString(0, "OK\n");
 }
 
 
@@ -5565,6 +5597,8 @@ static void SPI_Init()
 
 	using namespace HW;
 
+	SEGGER_RTT_WriteString(0, RTT_CTRL_TEXT_BRIGHT_GREEN "SPI Init ... ");
+
 	#ifdef CPU_SAME53	
 
 		HW::GCLK->PCHCTRL[GCLK_SERCOM0_CORE] = GCLK_GEN(GEN_MCK)|GCLK_CHEN;	// 25 MHz
@@ -5680,7 +5714,7 @@ static void SPI_Init()
 
 #endif
 
-	SEGGER_RTT_WriteString(0, RTT_CTRL_TEXT_BRIGHT_GREEN "SPI Init ... OK\n");
+	SEGGER_RTT_WriteString(0, "OK\n");
 }
 
 //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -6125,6 +6159,8 @@ void InitHardware()
 
 	#ifdef _DEBUG
 
+		SEGGER_RTT_printf(0, "HW::WDT->CTRLA = 0x%02X\n", (u32)(HW::WDT->CTRLA));
+
 		SEGGER_RTT_WriteString(0, RTT_CTRL_TEXT_BRIGHT_GREEN "Disable WDT ... ");
 
 		HW::MCLK->APBAMASK |= APBA_WDT;
@@ -6179,7 +6215,7 @@ void InitHardware()
 
 	//InitManTransmit();
 	InitManRecieve();
-	Init_CRC_CCITT_DMA();
+	//Init_CRC_CCITT_DMA();
 
 	InitManTransmit2();
 

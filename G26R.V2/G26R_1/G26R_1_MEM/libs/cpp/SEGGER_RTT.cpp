@@ -171,6 +171,23 @@ struct RTT_CB
 
 	void Init()
 	{
+		acID[0]		= 'S';
+		acID[1]		= 'E';
+		acID[2]		= 'G';
+		acID[3]		= 'G';
+		acID[4]		= 'E';
+		acID[5]		= 'R';
+		acID[6]		= ' ';
+		acID[7]		= 'R';
+		acID[8]		= 'T';
+		acID[9]		= 'T';
+		acID[10] 	= 'I';
+		acID[11] 	= 0;
+		acID[12] 	= 0;
+		acID[13] 	= 0;
+		acID[14] 	= 0;
+		acID[15] 	= 0;
+
 		if (_selfPtr != this || _check != 0x5555AAAA)
 		{
 			sName[0] = 'T';
@@ -183,23 +200,6 @@ struct RTT_CB
 			sName[7] = 'l';
 			sName[8] = 0;
 
-			acID[0]		= 'S';
-			acID[1]		= 'E';
-			acID[2]		= 'G';
-			acID[3]		= 'G';
-			acID[4]		= 'E';
-			acID[5]		= 'R';
-			acID[6]		= ' ';
-			acID[7]		= 'R';
-			acID[8]		= 'T';
-			acID[9]		= 'T';
-			acID[10] 	= 'I';
-			acID[11] 	= 0;
-			acID[12] 	= 0;
-			acID[13] 	= 0;
-			acID[14] 	= 0;
-			acID[15] 	= 0;
-
 			MaxNumUpBuffers = 1;	
 			MaxNumDownBuffers = 1;
 			aUp[0].Init(sName, _acUpBuffer, sizeof(_acUpBuffer), SEGGER_RTT_MODE_NO_BLOCK_SKIP);
@@ -211,6 +211,8 @@ struct RTT_CB
 };
 
 extern RTT_CB SeggerRttCB;
+
+//RTT_CB rttCB __attribute__((at(0x47000000)));
 
 #define _SEGGER_RTT SeggerRttCB
 

@@ -2693,6 +2693,7 @@ static void InitMainVars()
 
 static void LoadVars()
 {
+	SEGGER_RTT_WriteString(0, RTT_CTRL_TEXT_BRIGHT_CYAN "Load Vars ... ");
 
 	static DSCI2C dsc;
 	static DSCSPI spi;
@@ -2794,6 +2795,10 @@ static void LoadVars()
 
 		svCount = 2;
 	};
+
+	SEGGER_RTT_WriteString(0, "FRAM SPI - "); SEGGER_RTT_WriteString(0, (c1) ? (RTT_CTRL_TEXT_BRIGHT_GREEN "OK\n") : (RTT_CTRL_TEXT_BRIGHT_RED "ERROR"));
+
+	SEGGER_RTT_WriteString(0, RTT_CTRL_TEXT_BRIGHT_WHITE " - FRAM I2C - "); SEGGER_RTT_WriteString(0, (c2) ? (RTT_CTRL_TEXT_BRIGHT_CYAN "OK\n") : (RTT_CTRL_TEXT_BRIGHT_RED "ERROR\n"));
 }
 
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++

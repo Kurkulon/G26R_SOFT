@@ -14,13 +14,9 @@ LR_IROM1 0x00000000 0x00004000  {    ; load region size_region
    .ANY (+RO)
   }
 
-  RW_IRAM1 0x20000800 0x00001F800 {  ; RW data
-   ;*(SEGGER_RTT_RW, +First)
+  RW_IRAM1 0x20000300 0x00001F800 {  ; RW data
    .ANY2 (+RW +ZI)
   }
 
-  RW_IRAM2 0x47000000 0x00002000 {  ; RW data
-   .ANY1 (+RW +ZI)
-  }
 }
 

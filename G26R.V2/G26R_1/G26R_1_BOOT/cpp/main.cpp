@@ -660,7 +660,7 @@ static bool HandShake()
 
 	bool bootCheck = rcause & (RSTC_NVM|RSTC_WDT|RSTC_BACKUP);
 
-	SEGGER_RTT_printf(0, RTT_CTRL_TEXT_BRIGHT_GREEN "HW::RSTC->RCAUSE = 0x%02X\n", rcause);
+	SEGGER_RTT_printf(0, RTT_CTRL_TEXT_WHITE "HW::RSTC->RCAUSE = 0x%02X\n", rcause);
 
 	if (!flashCheck || bootCheck)
 	{
@@ -919,7 +919,7 @@ static void WDT_Init()
 
 	#endif
 
-	SEGGER_RTT_WriteString(0, RTT_CTRL_TEXT_BRIGHT_GREEN "WDT init ... OK\n");
+	SEGGER_RTT_WriteString(0, RTT_CTRL_TEXT_BRIGHT_YELLOW "WDT init ... OK\n");
 }
 
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
