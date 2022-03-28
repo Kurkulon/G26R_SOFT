@@ -2773,6 +2773,10 @@ static void LoadVars()
 		if (p.CRC.w == 0) { c2 = true; break; };
 	};
 
+	SEGGER_RTT_WriteString(0, "FRAM SPI - "); SEGGER_RTT_WriteString(0, (c1) ? (RTT_CTRL_TEXT_BRIGHT_GREEN "OK\n") : (RTT_CTRL_TEXT_BRIGHT_RED "ERROR"));
+
+	SEGGER_RTT_WriteString(0, RTT_CTRL_TEXT_BRIGHT_WHITE " - FRAM I2C - "); SEGGER_RTT_WriteString(0, (c2) ? (RTT_CTRL_TEXT_BRIGHT_CYAN "OK\n") : (RTT_CTRL_TEXT_BRIGHT_RED "ERROR\n"));
+
 	if (c1 && c2)
 	{
 		if (mv1.timeStamp > mv2.timeStamp)
@@ -2796,9 +2800,6 @@ static void LoadVars()
 		svCount = 2;
 	};
 
-	SEGGER_RTT_WriteString(0, "FRAM SPI - "); SEGGER_RTT_WriteString(0, (c1) ? (RTT_CTRL_TEXT_BRIGHT_GREEN "OK\n") : (RTT_CTRL_TEXT_BRIGHT_RED "ERROR"));
-
-	SEGGER_RTT_WriteString(0, RTT_CTRL_TEXT_BRIGHT_WHITE " - FRAM I2C - "); SEGGER_RTT_WriteString(0, (c2) ? (RTT_CTRL_TEXT_BRIGHT_CYAN "OK\n") : (RTT_CTRL_TEXT_BRIGHT_RED "ERROR\n"));
 }
 
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++

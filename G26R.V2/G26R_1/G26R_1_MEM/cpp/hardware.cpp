@@ -3573,7 +3573,6 @@ bool SendManData2(MTB* mtb)
 
 static void InitManTransmit2()
 {
-
 	using namespace HW;
 
 	SEGGER_RTT_WriteString(0, RTT_CTRL_TEXT_BRIGHT_YELLOW "Manchester transmit2 Init ... ");
