@@ -1,0 +1,6 @@
+speed 1000
+r
+h
+exec device = AT91SAM7X256
+loadbin obj\Debug-memory-a.bin,0x100000
+exit
