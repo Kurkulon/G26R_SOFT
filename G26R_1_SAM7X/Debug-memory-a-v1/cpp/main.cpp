@@ -120,11 +120,138 @@ void ErrorHalt(u32 code)
 
 //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
+void Error_PIO_pin(byte code, byte pio, byte pin)
+{
+	byte highDigit = pin / 10 + 1;
+	byte lowDigit = pin % 10 + 1;
+
+	code += 1;
+	pio += 1;
+
+	while(1)
+	{
+		for (byte i = 0; i < code; i++)
+		{
+			TestPin1_Set();
+			__nop();
+			TestPin1_Clr();
+			__nop();
+		};
+
+		delay(10);
+
+		for (byte i = 0; i < pio; i++)
+		{
+			TestPin1_Set();
+			__nop();
+			TestPin1_Clr();
+			__nop();
+		};
+
+		delay(10);
+
+		for (byte i = 0; i < highDigit; i++)
+		{
+			TestPin1_Set();
+			__nop();
+			TestPin1_Clr();
+			__nop();
+		};
+
+		delay(10);
+
+		for (byte i = 0; i < lowDigit; i++)
+		{
+			TestPin1_Set();
+			__nop();
+			TestPin1_Clr();
+			__nop();
+		};
+
+		delay(10000);
+	};
+}
+
+//++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+static void Test_PIO_Pins()
+{
+    AT91F_PMC_EnablePeriphClock ( AT91C_BASE_PMC, 1 << AT91C_ID_PIOA ) ;
+	AT91F_PMC_EnablePeriphClock ( AT91C_BASE_PMC, 1 << AT91C_ID_PIOB ) ;
+
+	const u32 testMaskA = ((1<<19)-1) | (1<<22) | (7<<27);
+	const u32 testMaskB = ((1<<28)-1);
+
+	for (u32 i = 0; i < 64; i++)
+	{
+		PIOA->PIO_PER	= testMaskA;		PIOB->PIO_PER	= testMaskB;
+		PIOA->PIO_ODR	= testMaskA;		PIOB->PIO_ODR	= testMaskB;
+		PIOA->PIO_PPUER = testMaskA;		PIOB->PIO_PPUER = testMaskB;
+
+		u32 pinMaskA = 1ULL<<i;
+		u32 pinMaskB = (1ULL<<i)>>32;
+
+		if ((pinMaskA & testMaskA) || (pinMaskB & testMaskB))
+		{
+			delay(100); 
+
+			u32 a1 = PIOA->PIO_PDSR;
+			u32 b1 = PIOB->PIO_PDSR;
+
+			if ((pinMaskA && ((a1 & pinMaskA) == 0)) || (pinMaskB && ((b1 & pinMaskB) == 0)))
+			{
+				Error_PIO_pin(ERROR_PIO_PIN_LOW, i>>5, i&31);
+			};
+
+			PIOA->PIO_OER = pinMaskA; PIOA->PIO_CODR = pinMaskA;
+			PIOB->PIO_OER = pinMaskB; PIOA->PIO_CODR = pinMaskB;
+
+			delay(100); 
+
+			u32 a2 = PIOA->PIO_PDSR;
+			u32 b2 = PIOB->PIO_PDSR;
+
+			if ((a2 & pinMaskA) || (b2 & pinMaskB))
+			{
+				Error_PIO_pin(ERROR_PIO_PIN_HI, i>>5, i&31);
+			};
+
+			PIOA->PIO_SODR = pinMaskA;
+			PIOB->PIO_SODR = pinMaskB;
+			
+			delay(100); 
+
+			u32 a3 = PIOA->PIO_PDSR;
+			u32 b3 = PIOB->PIO_PDSR;
+
+			bool ca1 = (a1 ^ a2) & testMaskA & ~pinMaskA;
+			bool ca2 = (a2 ^ a3) & testMaskA & ~pinMaskA;
+
+			bool cb1 = (b1 ^ b2) & testMaskB & ~pinMaskB;
+			bool cb2 = (b2 ^ b3) & testMaskB & ~pinMaskB;
+
+			if (ca1 || ca2 || cb1 || cb2) 
+			{
+				Error_PIO_pin(ERROR_PIO_PIN_SHORT, i>>5, i&31);
+			};
+		};
+	};
+
+	PIOA->PIO_PER	= testMaskA;		PIOB->PIO_PER	= testMaskB;
+	PIOA->PIO_ODR	= testMaskA;		PIOB->PIO_ODR	= testMaskB;
+	PIOA->PIO_PPUER = testMaskA;		PIOB->PIO_PPUER = testMaskB;
+}
+
+
+//++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
 /**************************** Main ********************************************/
 
 int main(void)
 {
 	TestPins_Init();
+
+	Test_PIO_Pins();
 
 	RTC_Init();
 

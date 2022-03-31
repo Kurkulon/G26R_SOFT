@@ -139,24 +139,7 @@
           <Name>UL2ARM(-U56240812 -O15 -S0 -C0 -FO7 -FD200000 -FC800 -FN1 -FF0AT91SAM7_256 -FS0100000 -FL040000)</Name>
         </SetRegEntry>
       </TargetDriverDllRegistry>
-      <Breakpoint>
-        <Bp>
-          <Number>0</Number>
-          <Type>0</Type>
-          <LineNumber>1103</LineNumber>
-          <EnabledFlag>1</EnabledFlag>
-          <Address>1055908</Address>
-          <ByteObject>0</ByteObject>
-          <HtxType>0</HtxType>
-          <ManyObjects>0</ManyObjects>
-          <SizeOfObject>0</SizeOfObject>
-          <BreakByAccess>0</BreakByAccess>
-          <BreakIfRCount>1</BreakIfRCount>
-          <Filename>d:\Work\G26R_SOFT\G26R_1_SAM7X\Debug-memory-a-v1\cpp\emac.cpp</Filename>
-          <ExecCommand></ExecCommand>
-          <Expression>\\Debug_memory_a\cpp/emac.cpp\1103</Expression>
-        </Bp>
-      </Breakpoint>
+      <Breakpoint/>
       <WatchWindow1>
         <Ww>
           <count>0</count>
