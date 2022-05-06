@@ -1,6 +1,6 @@
 #include "hardware.h"
 //#include "options.h"
-#include "emac.h"
+#include "hw_emac.h"
 #include "xtrap.h"
 #include "flash.h"
 #include "CRC16.h"
@@ -250,6 +250,13 @@ void SetNumDevice(u16 num)
 extern u16 GetNumDevice()
 {
 	return mv.numDevice;
+}
+
+//++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+extern u16 GetVersionDevice()
+{
+	return verDevice;
 }
 
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -3028,7 +3035,7 @@ int main()
 
 	InitEMAC();
 
-	InitTraps();
+	//InitTraps();
 
 	FLASH_Init();
 

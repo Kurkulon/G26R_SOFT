@@ -4,6 +4,8 @@
 #include "types.h"
 //#include "core.h"
 #include "time.h"
+#include <i2c.h>
+#include <spi.h>
 
 //#define NAND_SAMSUNG
 #define NAND_MICRON
@@ -107,167 +109,10 @@ __packed struct NandID
 
 //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
-struct NandMemSize
-{
- 	u64 ch;	// chip
- 	u64 fl;	// full
-// 	u32 bl;	// block
-////	u32 row;
-//	u16 pg;	// page
-	u16 mask;
-//	byte shPg; //(1 << x)
-//	byte shBl; //(1 << x)
-//	byte shCh;
-//	//byte shRow;
-//
-//	byte bitCol;
-//	byte bitPage; // 
-//	byte bitBlock;
-//
-//	u16	pagesInBlock;
-//
-//
-//	u16		maskPage;
-//	u32		maskBlock;
-
-	//byte	chipValidNext[NAND_MAX_CHIP]; // ≈сли чип битый, то по индексу находитс€ следующий хороший чип
-	//byte	chipValidPrev[NAND_MAX_CHIP]; // ≈сли чип битый, то по индексу находитс€ предыдущий хороший чип
-
-	//u32		chipOffsetNext[NAND_MAX_CHIP]; // ≈сли чип битый, то по индексу находитс€ смещение адреса на следующий хороший чип
-	//u32		chipOffsetPrev[NAND_MAX_CHIP]; // ≈сли чип битый, то по индексу находитс€ смещение адреса на предыдущий хороший чип
-
-	byte	chipDataBusMask[NAND_MAX_CHIP]; // ≈сли проблема по линии данных, то соответствующи бит равен 0
-
-	NandID	id[NAND_MAX_CHIP];
-	u16		integrityCRC[NAND_MAX_CHIP];
-
-
-};
 
 //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-
-struct FLADR
-{
-	union
-	{
-		struct K9K8
-		{
-			u64		col		: K9K8_COL_BITS;
-			u64 	page	: K9K8_PAGE_BITS;
-			u64		chip	: K9K8_CHIP_BITS;
-			u64 	block	: K9K8_BLOCK_BITS;
-			//u64		overflow : (64-(K9K8_COL_BITS+K9K8_PAGE_BITS+NAND_CHIP_BITS+K9K8_BLOCK_BITS));
-		} K9K8;
-
-		struct MT29
-		{
-			u64		col		: MT29_COL_BITS;
-			u64 	page	: MT29_PAGE_BITS;
-			u64		chip	: MT29_CHIP_BITS;
-			u64 	block	: MT29_BLOCK_BITS;
-			//u64		overflow : (64-(MT29_COL_BITS+MT29_PAGE_BITS+NAND_CHIP_BITS+MT29_BLOCK_BITS));
-		} MT29;
-
-		u32 DW[2];
-		u64	raw;
-	};
-
-	static byte COL_BITS;
-	static byte PAGE_BITS;		
-	static byte BLOCK_BITS;		
-
-	//static byte COL_OFF;	// = 0
-	static byte PAGE_OFF;	// = COL_BITS;
-	static byte CHIP_OFF;	// = PAGE_OFF + PAGE_BITS
-	static byte BLOCK_OFF;	// = CHIP_OFF + NAND_CHIP_BITS 		
-
-	static u32 COL_MASK;
-	static u32 PAGE_MASK;		
-	static u32 CHIP_MASK;		
-	static u32 BLOCK_MASK;		
-
-	static u32 RAWPAGE_MASK;	
-	static u32 RAWBLOCK_MASK;	
-
-	static u64 RAWADR_MASK;
-
-	static u32 pg; //enum { pg = (1<<NAND_COL_BITS) };
-//	u32		rawpage;
-
-//	const NandMemSize& sz;
-
-	static byte	chipValidNext[NAND_MAX_CHIP]; // ≈сли чип битый, то по индексу находитс€ следующий хороший чип
-	static byte	chipValidPrev[NAND_MAX_CHIP]; // ≈сли чип битый, то по индексу находитс€ предыдущий хороший чип
-
-	static u32	chipOffsetNext[NAND_MAX_CHIP]; // ≈сли чип битый, то по индексу находитс€ смещение адреса на следующий хороший чип
-	static u32	chipOffsetPrev[NAND_MAX_CHIP]; // ≈сли чип битый, то по индексу находитс€ смещение адреса на предыдущий хороший чип
-
-	inline void operator=(const FLADR &a) { raw = a.raw; }
-
-	void SetCol(u32 c)		{ DW[0] &= ~COL_MASK;						DW[0] |= c & COL_MASK; }
-	void SetPage(u32 p)		{ DW[0] &= ~(PAGE_MASK << PAGE_OFF);		DW[0] |= (p & PAGE_MASK) << PAGE_OFF; }
-	void SetChip(u32 c)		{ DW[0] &= ~(CHIP_MASK << CHIP_OFF);		DW[0] |= (c & CHIP_MASK) << CHIP_OFF; }
-	void SetBlock(u32 b)	{ raw   &= ~((u64)BLOCK_MASK << BLOCK_OFF);	raw   |= (u64)(b & BLOCK_MASK) << BLOCK_OFF; }
-
-	u16 GetCol()	{ return DW[0] & COL_MASK; }
-	u16 GetPage()	{ return (DW[0] >> PAGE_OFF) & PAGE_MASK; }
-	u16 GetChip()	{ return (DW[0] >> CHIP_OFF) & CHIP_MASK; }
-	u16 GetBlock()	{ return (raw >> BLOCK_OFF) & BLOCK_MASK; }
-	
-
-	FLADR() : raw(0) {}
-	//FLADR(u32 bl, u16 pg, u16 cl, byte ch) : block(bl), page(pg), col(cl), chip(ch) {}
-	FLADR(u32 pg) { SetRawPage(pg); }
-
-	static void	InitVaildTables(u16 mask);
-
-	u32		GetRawPage() { return (raw & RAWADR_MASK) >> PAGE_OFF; }
-
-	void	SetRawPage(u32 p) { raw = (u64)(p & RAWPAGE_MASK) << PAGE_OFF; };
-
-	u32		GetRawBlock() { return (raw & RAWADR_MASK) >> CHIP_OFF; }
-
-	void	SetRawBlock(u32 b) { raw = (u64)(b & RAWBLOCK_MASK) << CHIP_OFF; };
-
-	u64		GetRawAdr()	{ return raw & RAWADR_MASK; };
-	void	SetRawAdr(u64 a) { raw  = a & RAWADR_MASK; };
-
-	void	NextPage()	{ DW[0] &= ~COL_MASK; raw += 1UL << COL_BITS; raw += chipOffsetNext[GetChip()]; }
-	void	NextBlock()	{ DW[0] &= ~((PAGE_MASK << PAGE_OFF)|COL_MASK); raw += 1UL << CHIP_OFF; raw += chipOffsetNext[GetChip()];}
-	void	PrevPage()	{ raw -= 1UL << COL_BITS; DW[0] &= ~COL_MASK; raw -= chipOffsetPrev[GetChip()]; }
-	void	PrevBlock()	{ raw -= 1UL << CHIP_OFF; DW[0] &= ~((PAGE_MASK << PAGE_OFF)|COL_MASK); raw -= chipOffsetPrev[GetChip()];}
-
-	void	AddRaw(u32 v) { raw += v; raw += chipOffsetNext[GetChip()]; }
-	void	SubRaw(u32 v) { raw -= v; raw -= chipOffsetPrev[GetChip()]; }
-};
-
-//++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-
-extern bool NAND_BUSY(); 
-extern bool NAND_CmdBusy();
-extern void NAND_WriteDataDMA(volatile void *src, u16 len);
-extern void NAND_WriteDataPIO(volatile void *src, u16 len);
-extern void NAND_ReadDataDMA(volatile void *dst, u16 len);
-extern void NAND_ReadDataDMA2(volatile void *dst, u16 len);
-extern void NAND_ReadDataPIO(volatile void *dst, u16 len);
-extern bool NAND_CheckDataComplete();
-extern void NAND_Chip_Select(byte chip);
-extern void NAND_Chip_Disable();
-extern void NAND_WRITE(byte data);
-extern void NAND_CopyDataDMA(volatile void *src, volatile void *dst, u16 len);
-extern bool NAND_CheckCopyComplete();
-
-extern void NAND_CmdEraseBlock(u32 bl);
-extern void NAND_CmdRandomRead(u16 col);
-extern void NAND_CmdReadPage(u16 col, u32 bl, u16 pg);
-extern void NAND_CmdWritePage(u16 col, u32 bl, u16 pg);
-extern void NAND_CmdWritePage2();
-extern byte NAND_CmdReadStatus();
-
-inline const NandMemSize* NAND_GetMemSize() { extern NandMemSize nandSize; return &nandSize; } 
-inline u32 NAND_GetGoodChipMask() { extern NandMemSize nandSize; return nandSize.mask; } 
 
 
 extern void Hardware_Init();
@@ -281,50 +126,50 @@ extern bool CRC_CCITT_DMA_CheckComplete(u16* crc);
 
 //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
-struct DSCI2C
-{
-	DSCI2C*			next;
-	void*			wdata;
-	void*			rdata;
-	void*			wdata2;
-	u16				wlen;
-	u16				wlen2;
-	u16				rlen;
-	u16				readedLen;
-	byte			adr;
-	volatile bool	ready;
-	volatile bool	ack;
-};
+//struct DSCI2C
+//{
+//	DSCI2C*			next;
+//	void*			wdata;
+//	void*			rdata;
+//	void*			wdata2;
+//	u16				wlen;
+//	u16				wlen2;
+//	u16				rlen;
+//	u16				readedLen;
+//	byte			adr;
+//	volatile bool	ready;
+//	volatile bool	ack;
+//};
 
 //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 //extern bool Write_I2C(DSCI2C *d);
 //inline bool Read_I2C(DSCI2C *d) { return Write_I2C(d); }
 //extern bool Check_I2C_ready();
-extern bool I2C_AddRequest(DSCI2C *d);
-extern bool I2C_Update();
+//extern bool I2C_AddRequest(DSCI2C *d);
+//extern bool I2C_Update();
 
 //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
-struct DSCSPI
-{
-	DSCSPI*			next;
-	//u32				baud;
-	//u32				FDR;
-	void*			wdata;
-	void*			rdata;
-	u32				adr;
-	u16				alen;
-	u16				wlen;
-	u16				rlen;
-	volatile bool	ready;
-	byte			csnum;
-};
+//struct DSCSPI
+//{
+//	DSCSPI*			next;
+//	//u32				baud;
+//	//u32				FDR;
+//	void*			wdata;
+//	void*			rdata;
+//	u32				adr;
+//	u16				alen;
+//	u16				wlen;
+//	u16				rlen;
+//	volatile bool	ready;
+//	byte			csnum;
+//};
 
 //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
-extern bool SPI_AddRequest(DSCSPI *d);
-extern bool SPI_Update();
+//extern bool SPI_AddRequest(DSCSPI *d);
+//extern bool SPI_Update();
 
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 

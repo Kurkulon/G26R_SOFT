@@ -1,5 +1,5 @@
-#ifndef EMAC_DEF_H__13_06_2013__09_47
-#define EMAC_DEF_H__13_06_2013__09_47
+#ifndef HW_EMAC_DEF_H__20_04_2022__16_55
+#define HW_EMAC_DEF_H__20_04_2022__16_55
 
 #include "core.h"
 
@@ -13,11 +13,6 @@
 #define NUM_TX_DSC          16         /* 0x0600 for Tx                     */
 //#define ETH_TX_BUF_SIZE     1536        /* EMAC Transmit buffer size         */
 
-#ifndef WIN32
-#define IP_MTU				1500
-#else
-#define IP_MTU				0x4000
-#endif
 
 #define AT91C_PHY_ADDR      0
 
@@ -63,153 +58,6 @@
 
 #ifdef CPU_SAME53	
 
-	/* -------- GMAC_NCR : (GMAC Offset: 0x000) Network Control Register -------- */
-	#define GMAC_LBL			(0x1u << 1) /**< \brief (GMAC_NCR) Loop Back Local */
-	#define GMAC_RXEN			(0x1u << 2) /**< \brief (GMAC_NCR) Receive Enable */
-	#define GMAC_TXEN			(0x1u << 3) /**< \brief (GMAC_NCR) Transmit Enable */
-	#define GMAC_MPE			(0x1u << 4) /**< \brief (GMAC_NCR) Management Port Enable */
-	#define GMAC_CLRSTAT 		(0x1u << 5) /**< \brief (GMAC_NCR) Clear Statistics Registers */
-	#define GMAC_INCSTAT 		(0x1u << 6) /**< \brief (GMAC_NCR) Increment Statistics Registers */
-	#define GMAC_WESTAT			(0x1u << 7) /**< \brief (GMAC_NCR) Write Enable for Statistics Registers */
-	#define GMAC_BP				(0x1u << 8) /**< \brief (GMAC_NCR) Back pressure */
-	#define GMAC_TSTART			(0x1u << 9) /**< \brief (GMAC_NCR) Start Transmission */
-	#define GMAC_THALT			(0x1u << 10) /**< \brief (GMAC_NCR) Transmit Halt */
-	#define GMAC_TXPF			(0x1u << 11) /**< \brief (GMAC_NCR) Transmit Pause Frame */
-	#define GMAC_TXZQPF			(0x1u << 12) /**< \brief (GMAC_NCR) Transmit Zero Quantum Pause Frame */
-	//#define GMAC_RDS			(0x1u << 14) /**< \brief (GMAC_NCR) Read Snapshot */
-	#define GMAC_SRTSM			(0x1u << 15) /**< \brief (GMAC_NCR) Store Receive Time Stamp to Memory */
-	#define GMAC_ENPBPR			(0x1u << 16) /**< \brief (GMAC_NCR) Enable PFC Priority-based Pause Reception */
-	#define GMAC_TXPBPF			(0x1u << 17) /**< \brief (GMAC_NCR) Transmit PFC Priority-based Pause Frame */
-	#define GMAC_FNP			(0x1u << 18) /**< \brief (GMAC_NCR) Flush Next Packet */
-	#define GMAC_LPI			(0x1u << 19) 
-
-	/* -------- GMAC_NCFGR : (GMAC Offset: 0x004) Network Configuration Register -------- */
-	#define GMAC_SPD		(0x1u << 0) /**< \brief (GMAC_NCFGR) Speed */
-	#define GMAC_FD			(0x1u << 1) /**< \brief (GMAC_NCFGR) Full Duplex */
-	#define GMAC_DNVLAN 	(0x1u << 2) /**< \brief (GMAC_NCFGR) Discard Non-VLAN FRAMES */
-	#define GMAC_JFRAME 	(0x1u << 3) /**< \brief (GMAC_NCFGR) Jumbo Frame Size */
-	#define GMAC_CAF		(0x1u << 4) /**< \brief (GMAC_NCFGR) Copy All Frames */
-	#define GMAC_NBC		(0x1u << 5) /**< \brief (GMAC_NCFGR) No Broadcast */
-	#define GMAC_MTIHEN 	(0x1u << 6) /**< \brief (GMAC_NCFGR) Multicast Hash Enable */
-	#define GMAC_UNIHEN 	(0x1u << 7) /**< \brief (GMAC_NCFGR) Unicast Hash Enable */
-	#define GMAC_MAXFS		(0x1u << 8) /**< \brief (GMAC_NCFGR) 1536 Maximum Frame Size */
-	#define GMAC_RTY		(0x1u << 12) /**< \brief (GMAC_NCFGR) Retry Test */
-	#define GMAC_PEN		(0x1u << 13) /**< \brief (GMAC_NCFGR) Pause Enable */
-	#define GMAC_RXBUFO_P	14
-	#define GMAC_RXBUFO_M	(0x3u << GMAC_RXBUFO_P) /**< \brief (GMAC_NCFGR) Receive Buffer Offset */
-	#define GMAC_RXBUFO(value) ((GMAC_RXBUFO_M & ((value) << GMAC_NCFGR_RXBUFO_P)))
-	#define GMAC_LFERD		(0x1u << 16) /**< \brief (GMAC_NCFGR) Length Field Error Frame Discard */
-	#define GMAC_RFCS		(0x1u << 17) /**< \brief (GMAC_NCFGR) Remove FCS */
-	#define GMAC_CLK_P 18
-	#define GMAC_CLK_M			(0x7u << GMAC_CLK_P) /**< \brief (GMAC_NCFGR) MDC CLock Division */
-	#define   GMAC_CLK_MCK_8	(0x0u << 18) /**< \brief (GMAC_NCFGR) MCK divided by 8 (MCK up to 20 MHz) */
-	#define   GMAC_CLK_MCK_16 	(0x1u << 18) /**< \brief (GMAC_NCFGR) MCK divided by 16 (MCK up to 40 MHz) */
-	#define   GMAC_CLK_MCK_32 	(0x2u << 18) /**< \brief (GMAC_NCFGR) MCK divided by 32 (MCK up to 80 MHz) */
-	#define   GMAC_CLK_MCK_48 	(0x3u << 18) /**< \brief (GMAC_NCFGR) MCK divided by 48 (MCK up to 120MHz) */
-	#define   GMAC_CLK_MCK_64 	(0x4u << 18) /**< \brief (GMAC_NCFGR) MCK divided by 64 (MCK up to 160 MHz) */
-	#define   GMAC_CLK_MCK_96 	(0x5u << 18) /**< \brief (GMAC_NCFGR) MCK divided by 96 (MCK up to 240 MHz) */
-	#define GMAC_DBW_P 21
-	#define GMAC_DBW_M			(0x3u << GMAC_DBW_P) /**< \brief (GMAC_NCFGR) Data Bus Width */
-	#define GMAC_DBW(value)		((GMAC_DBW_M & ((value) << GMAC_DBW_P)))
-	#define GMAC_DCPF			(0x1u << 23) /**< \brief (GMAC_NCFGR) Disable Copy of Pause Frames */
-	#define GMAC_RXCOEN 		(0x1u << 24) /**< \brief (GMAC_NCFGR) Receive Checksum Offload Enable */
-	#define GMAC_EFRHD			(0x1u << 25) /**< \brief (GMAC_NCFGR) Enable Frames Received in Half Duplex */
-	#define GMAC_IRXFCS 		(0x1u << 26) /**< \brief (GMAC_NCFGR) Ignore RX FCS */
-	#define GMAC_IPGSEN 		(0x1u << 28) /**< \brief (GMAC_NCFGR) IP Stretch Enable */
-	#define GMAC_RXBP			(0x1u << 29) /**< \brief (GMAC_NCFGR) Receive Bad Preamble */
-	#define GMAC_IRXER			(0x1u << 30) /**< \brief (GMAC_NCFGR) Ignore IPG GRXER */
-	/* -------- GMAC_NSR : (GMAC Offset: 0x008) Network Status Register -------- */
-	#define GMAC_MDIO 			(0x1u << 1) /**< \brief (GMAC_NSR) MDIO Input Status */
-	#define GMAC_IDLE 			(0x1u << 2) /**< \brief (GMAC_NSR) PHY Management Logic Idle */
-	/* -------- GMAC_UR : (GMAC Offset: 0x00C) User Register -------- */
-	#define GMAC_MII (0x1u << 0) /**< \brief (GMAC_UR)  */
-	/* -------- GMAC_DCFGR : (GMAC Offset: 0x010) DMA Configuration Register -------- */
-	#define GMAC_FBLDO_P 0
-	#define GMAC_FBLDO_M (0x1fu << GMAC_FBLDO_P) /**< \brief (GMAC_DCFGR) Fixed Burst Length for DMA Data Operations: */
-	#define GMAC_FBLDO_SINGLE (0x1u << 0) /**< \brief (GMAC_DCFGR) 00001: Always use SINGLE AHB bursts */
-	#define GMAC_FBLDO_INCR4 (0x4u << 0) /**< \brief (GMAC_DCFGR) 001xx: Attempt to use INCR4 AHB bursts (Default) */
-	#define GMAC_FBLDO_INCR8 (0x8u << 0) /**< \brief (GMAC_DCFGR) 01xxx: Attempt to use INCR8 AHB bursts */
-	#define GMAC_FBLDO_INCR16 (0x10u << 0) /**< \brief (GMAC_DCFGR) 1xxxx: Attempt to use INCR16 AHB bursts */
-	#define GMAC_ESMA (0x1u << 6) /**< \brief (GMAC_DCFGR) Endian Swap Mode Enable for Management Descriptor Accesses */
-	#define GMAC_ESPA (0x1u << 7) /**< \brief (GMAC_DCFGR) Endian Swap Mode Enable for Packet Data Accesses */
-	#define GMAC_TXCOEN (0x1u << 11) /**< \brief (GMAC_DCFGR) Transmitter Checksum Generation Offload Enable */
-	#define GMAC_DRBS_P 16
-	#define GMAC_DRBS_M (0xffu << GMAC_DRBS_P) /**< \brief (GMAC_DCFGR) DMA Receive Buffer Size */
-	#define GMAC_DRBS(value) ((GMAC_DRBS_M & ((value) << GMAC_DRBS_P)))
-	#define GMAC_RXBMS_EIGHTH     (0<<8)            /**< \brief (GMAC_DCFGR) Receiver Packet Buffer Memory Size Select */
-	#define GMAC_RXBMS_QUARTER    (1<<8)            /**< \brief (GMAC_DCFGR) Receiver Packet Buffer Memory Size Select */
-	#define GMAC_RXBMS_HALF       (2<<8)            /**< \brief (GMAC_DCFGR) Receiver Packet Buffer Memory Size Select */
-	#define GMAC_RXBMS_FULL       (3<<8)            /**< \brief (GMAC_DCFGR) Receiver Packet Buffer Memory Size Select */
-	#define GMAC_TXPBMS_Pos       10           /**< \brief (GMAC_DCFGR) Transmitter Packet Buffer Memory Size Select */
-	#define GMAC_TXPBMS           ((0x1) << GMAC_TXPBMS_Pos)
-	#define GMAC_DDRP_Pos         24           /**< \brief (GMAC_DCFGR) DMA Discard Receive Packets */
-	#define GMAC_DDRP             ((0x1) << GMAC_DDRP_Pos)
-
-	/* -------- GMAC_TSR : (GMAC Offset: 0x014) Transmit Status Register -------- */
-	#define TSR_UBR (0x1u << 0) /**< \brief (GMAC_TSR) Used Bit Read */
-	#define TSR_COL (0x1u << 1) /**< \brief (GMAC_TSR) Collision Occurred */
-	#define TSR_RLE (0x1u << 2) /**< \brief (GMAC_TSR) Retry Limit Exceeded */
-	#define TSR_TXGO (0x1u << 3) /**< \brief (GMAC_TSR) Transmit Go */
-	#define TSR_TFC (0x1u << 4) /**< \brief (GMAC_TSR) Transmit Frame Corruption due to AHB error */
-	#define TSR_TXCOMP (0x1u << 5) /**< \brief (GMAC_TSR) Transmit Complete */
-	#define TSR_UND (0x1u << 6) /**< \brief (GMAC_TSR) Transmit Under Run */
-	#define TSR_HRESP (0x1u << 8) /**< \brief (GMAC_TSR) HRESP Not OK */
-	/* -------- GMAC_RSR : (GMAC Offset: 0x020) Receive Status Register -------- */
-	#define RSR_BNA (0x1u << 0) /**< \brief (GMAC_RSR) Buffer Not Available */
-	#define RSR_REC (0x1u << 1) /**< \brief (GMAC_RSR) Frame Received */
-	#define RSR_RXOVR (0x1u << 2) /**< \brief (GMAC_RSR) Receive Overrun */
-	#define RSR_HNO (0x1u << 3) /**< \brief (GMAC_RSR) HRESP Not OK */
-	/* -------- GMAC_MAN : (GMAC Offset: 0x034) PHY Maintenance Register -------- */
-	#define GMAC_MAN_DATA_Pos 0
-	#define GMAC_MAN_DATA_Msk (0xffffu << GMAC_MAN_DATA_Pos) /**< \brief (GMAC_MAN) PHY Data */
-	#define GMAC_MAN_DATA(value) ((GMAC_MAN_DATA_Msk & ((value) << GMAC_MAN_DATA_Pos)))
-	#define GMAC_MAN_WTN_Pos 16
-	#define GMAC_MAN_WTN_Msk (0x3u << GMAC_MAN_WTN_Pos) /**< \brief (GMAC_MAN) Write Ten */
-	#define GMAC_MAN_WTN(value) ((GMAC_MAN_WTN_Msk & ((value) << GMAC_MAN_WTN_Pos)))
-	#define GMAC_MAN_REGA_Pos 18
-	#define GMAC_MAN_REGA_Msk (0x1fu << GMAC_MAN_REGA_Pos) /**< \brief (GMAC_MAN) Register Address */
-	#define GMAC_MAN_REGA(value) ((GMAC_MAN_REGA_Msk & ((value) << GMAC_MAN_REGA_Pos)))
-	#define GMAC_MAN_PHYA_Pos 23
-	#define GMAC_MAN_PHYA_Msk (0x1fu << GMAC_MAN_PHYA_Pos) /**< \brief (GMAC_MAN) PHY Address */
-	#define GMAC_MAN_PHYA(value) ((GMAC_MAN_PHYA_Msk & ((value) << GMAC_MAN_PHYA_Pos)))
-	#define GMAC_MAN_OP_Pos 28
-	#define GMAC_MAN_OP_Msk (0x3u << GMAC_MAN_OP_Pos) /**< \brief (GMAC_MAN) Operation */
-	#define GMAC_MAN_OP(value) ((GMAC_MAN_OP_Msk & ((value) << GMAC_MAN_OP_Pos)))
-	#define GMAC_MAN_CLTTO (0x1u << 30) /**< \brief (GMAC_MAN) Clause 22 Operation */
-	#define GMAC_MAN_WZO (0x1u << 31) /**< \brief (GMAC_MAN) Write ZERO */
-
-	/* Receive status defintion */
-	#define RD_BROADCAST_ADDR   (1U << 31)  /* Broadcat address detected         */
-	#define RD_MULTICAST_HASH   (1U << 30)  /* MultiCast hash match              */
-	#define RD_UNICAST_HASH     (1U << 29)  /* UniCast hash match                */
-	//#define RD_EXTERNAL_ADDR    (1U << 28)  /* External Address match            */
-	#define RD_SARMF	        (1U << 27)  /* Specific address 1 match          */
-	#define RD_SA_MATCH         (3U << 25)  /* Specific address 2 match          */
-	#define RD_TYPE_ID          (3U << 22)  /* Type ID match                     */
-	#define RD_IP_CHECK         (3U << 22)  /* Type ID match                     */
-	#define RD_IP_OK			(1U << 22)  /* Type ID match                     */
-	#define RD_IP_TCP_OK		(2U << 22)  /* Type ID match                     */
-	#define RD_IP_UDP_OK		(3U << 22)  /* Type ID match                     */
-	#define RD_VLAN_TAG         (1U << 21)  /* VLAN tag detected                 */
-	#define RD_PRIORITY_TAG     (1U << 20)  /* PRIORITY tag detected             */
-	#define RD_VLAN_PRIORITY    (7U << 17)  /* PRIORITY Mask                     */
-	#define RD_CFI_IND          (1U << 16)  /* CFI indicator                     */
-	#define RD_EOF              (1U << 15)  /* EOF                               */
-	#define RD_SOF              (1U << 14)  /* SOF                               */
-	#define RD_BAD_FCS			(1U << 13)  /* Receive Buffer Offset Mask        */
-	#define RD_LENGTH_MASK      0x1FFF      /* Length of frame mask              */
-
-	/* Transmit Status definition */
-	#define TD_TRANSMIT_OK      (1U << 31)  /* Transmit OK                       */
-	#define TD_TRANSMIT_WRAP    (1U << 30)  /* Wrap bit: mark the last descriptor*/
-	#define TD_TRANSMIT_ERR     (1U << 29)  /* RLE:transmit error                */
-	#define TD_TRANSMIT_UND     (1U << 28)  /* Transmit Underrun                 */
-	#define TD_BUF_EX           (1U << 27)  /* Buffers exhausted in mid frame    */
-	#define TD_TRANSMIT_NO_CRC  (1U << 16)  /* No CRC will be appended to frame  */
-	#define TD_LAST_BUF         (1U << 15)  /* Last buffer in TX frame           */
-	#define TD_LENGTH_MASK      0x1FFF      /* Length of frame mask              */
-
-	#define AT91C_OWNERSHIP_BIT 0x00000001  /* Buffer owned by software          */
 
 #elif defined(CPU_XMC48)
 
@@ -663,4 +511,4 @@
 
 
 
-#endif // EMAC_DEF_H__13_06_2013__09_47
+#endif // HW_EMAC_DEF_H__20_04_2022__16_55

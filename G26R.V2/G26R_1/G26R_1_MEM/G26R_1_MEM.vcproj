@@ -27,7 +27,7 @@
 				CleanCommandLine="@del /Q $(OutDir)\*.*"
 				Output="$(OutDir)\G26K_XMC48.axf"
 				PreprocessorDefinitions="_DEBUG,__softfp=,CPU_XMC48"
-				IncludeSearchPath="$(ProjectDir)libs\cpp;$(ARMCC50INC);"
+				IncludeSearchPath="$(ProjectDir)..\..\..\..\G_LIBS_ARM\cpp;$(ARMCC50INC);"
 				ForcedIncludes=""
 				AssemblySearchPath=""
 				ForcedUsingAssemblies=""
@@ -47,7 +47,7 @@
 				CleanCommandLine="@del /Q $(OutDir)\*.*"
 				Output="$(OutDir)\G26K_XMC48.axf"
 				PreprocessorDefinitions="__softfp=,CPU_XMC48"
-				IncludeSearchPath="$(ProjectDir)libs\cpp;$(ARMCC50INC);"
+				IncludeSearchPath="$(ProjectDir)..\..\..\..\G_LIBS_ARM\cpp;$(ARMCC50INC);"
 				ForcedIncludes=""
 				AssemblySearchPath=""
 				ForcedUsingAssemblies=""
@@ -67,7 +67,7 @@
 				CleanCommandLine="@del /Q $(OutDir)\*.*"
 				Output="$(OutDir)\G26K_SAME53.axf"
 				PreprocessorDefinitions="_DEBUG,__softfp=,CPU_SAME53"
-				IncludeSearchPath="$(ProjectDir)libs\cpp;$(ARMCC50INC);"
+				IncludeSearchPath="$(ProjectDir)..\..\..\..\G_LIBS_ARM\cpp;$(ARMCC50INC);"
 				ForcedIncludes=""
 				AssemblySearchPath=""
 				ForcedUsingAssemblies=""
@@ -87,7 +87,7 @@
 				CleanCommandLine="@del /Q $(OutDir)\*.*"
 				Output="$(OutDir)\G26K_SAME53.axf"
 				PreprocessorDefinitions="__softfp=,CPU_SAME53"
-				IncludeSearchPath="$(ProjectDir)libs\cpp;$(ARMCC50INC);"
+				IncludeSearchPath="$(ProjectDir)..\..\..\..\G_LIBS_ARM\cpp;$(ARMCC50INC);"
 				ForcedIncludes=""
 				AssemblySearchPath=""
 				ForcedUsingAssemblies=""
@@ -107,7 +107,7 @@
 				CleanCommandLine="@del /Q $(OutDir)\*.*"
 				Output="$(OutDir)\G26K_WIN32.exe"
 				PreprocessorDefinitions="_DEBUG,__softfp=,WIN32"
-				IncludeSearchPath="$(ProjectDir)libs\cpp;"
+				IncludeSearchPath="$(ProjectDir)..\..\..\..\G_LIBS_ARM\cpp;"
 				ForcedIncludes=""
 				AssemblySearchPath=""
 				ForcedUsingAssemblies=""
@@ -128,15 +128,27 @@
 				>
 			</File>
 			<File
-				RelativePath=".\cpp\emac.cpp"
-				>
-			</File>
-			<File
-				RelativePath=".\cpp\flash.cpp"
-				>
-			</File>
-			<File
 				RelativePath=".\cpp\hardware.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\cpp\hw_emac.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\cpp\hw_i2c.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\cpp\hw_nand.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\cpp\hw_rtm.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\cpp\hw_spi.cpp"
 				>
 			</File>
 			<File
@@ -149,14 +161,6 @@
 			</File>
 			<File
 				RelativePath=".\cpp\req.cpp"
-				>
-			</File>
-			<File
-				RelativePath=".\cpp\trap.cpp"
-				>
-			</File>
-			<File
-				RelativePath=".\cpp\xtrap.cpp"
 				>
 			</File>
 		</Filter>
@@ -178,23 +182,27 @@
 				>
 			</File>
 			<File
-				RelativePath=".\cpp\emac.h"
-				>
-			</File>
-			<File
-				RelativePath=".\cpp\EMAC_DEF.h"
-				>
-			</File>
-			<File
-				RelativePath=".\cpp\flash.h"
-				>
-			</File>
-			<File
 				RelativePath=".\cpp\hardware.h"
 				>
 			</File>
 			<File
-				RelativePath=".\cpp\list.h"
+				RelativePath=".\cpp\hw_conf.h"
+				>
+			</File>
+			<File
+				RelativePath=".\cpp\hw_emac.h"
+				>
+			</File>
+			<File
+				RelativePath=".\cpp\HW_EMAC_DEF.h"
+				>
+			</File>
+			<File
+				RelativePath=".\cpp\hw_nand.h"
+				>
+			</File>
+			<File
+				RelativePath=".\cpp\hw_rtm.h"
 				>
 			</File>
 			<File
@@ -211,22 +219,6 @@
 			</File>
 			<File
 				RelativePath=".\cpp\rtc.h"
-				>
-			</File>
-			<File
-				RelativePath=".\cpp\trap.h"
-				>
-			</File>
-			<File
-				RelativePath=".\cpp\trap_def.h"
-				>
-			</File>
-			<File
-				RelativePath=".\cpp\vector.h"
-				>
-			</File>
-			<File
-				RelativePath=".\cpp\xtrap.h"
 				>
 			</File>
 		</Filter>

@@ -3,7 +3,7 @@
 
 #include "types.h"
 #include "core.h"
-#include "time.h"
+#include "hw_rtm.h"
 
 #ifdef CPU_XMC48
 	#include "COM_DEF.h"

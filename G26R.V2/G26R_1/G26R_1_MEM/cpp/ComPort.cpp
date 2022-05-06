@@ -5,7 +5,7 @@
 //#include <conio.h>
 
 #include "ComPort.h"
-//#include "hardware.h"
+#include "hw_conf.h"
 
 #ifdef _DEBUG_
 //	static const bool _debug = true;
