@@ -1,6 +1,6 @@
 #include "hardware.h"
 //#include "options.h"
-#include "hw_emac.h"
+//#include "hw_emac.h"
 #include "xtrap.h"
 #include "flash.h"
 #include "CRC16.h"
@@ -10,6 +10,7 @@
 #include "list.h"
 #include "PointerCRC.h"
 #include "SEGGER_RTT.h"
+#include "hw_conf.h"
 
 #ifdef WIN32
 
@@ -1812,7 +1813,7 @@ static void UpdateMan()
 				//manTrmData[1] = 0;
 				//mtb.len1 = 2;
 				//mtb.data1 = manTrmData;
-				SendManData2(&mtb);
+				SendManData(&mtb);
 
 				i++;
 			};
@@ -2966,7 +2967,6 @@ static void UpdateMisc()
 static void Update()
 {
 	NAND_Idle();	
-	//UpdateEMAC();
 
 	if (EmacIsConnected())
 	{
@@ -3025,7 +3025,7 @@ int main()
 
 #ifndef WIN32
 
-	DisableDSP();
+	//DisableDSP();
 
 #endif
 
@@ -3049,13 +3049,13 @@ int main()
 	comdsp.Connect(ComPort::ASYNC, 2, 6250000, 2, 1);
 	//commem.Connect(ComPort::ASYNC, 1, 6250000, 0, 1);
 
-	EnableDSP();
+	//EnableDSP();
 
 	//__breakpoint(0);
 
-	FlashMoto();
+	//FlashMoto();
 
-	FlashDSP();
+	//FlashDSP();
 
 #endif
 

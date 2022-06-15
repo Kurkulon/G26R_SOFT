@@ -8,6 +8,13 @@
 #define MCK (MCK_MHz*1000000)
 #define NS2CLK(x) (((x)*MCK_MHz+500)/1000)
 
+//++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+#define FRAM_SPI_MAINVARS_ADR 0
+#define FRAM_SPI_SESSIONS_ADR 0x200
+
+#define FRAM_I2C_MAINVARS_ADR 0
+#define FRAM_I2C_SESSIONS_ADR 0x200
 
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
@@ -26,6 +33,7 @@
 	// 75	- PA25	- main loop
 
 
+	// ++++++++++++++	GEN	++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 	#define GEN_MCK		0
 	#define GEN_32K		1
@@ -33,16 +41,48 @@
 	#define GEN_1M		3
 	//#define GEN_500K	4
 
-	#define	NAND_DMACH			0
-	#define	COM1_DMACH			1
-	#define	COM2_DMACH			2
-	#define	COM3_DMACH			3
+	// ++++++++++++++	DMA	++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+	#define	NAND_DMA			DMA_CH0
+	#define	COM1_DMA			DMA_CH1
+	#define	COM2_DMA			DMA_CH2
+	#define	COM3_DMA			DMA_CH3
 	#define	SPI_DMACH_TX		4
 	#define	SPI_DMACH_RX		5
-	#define	NAND_MEMCOPY_DMACH	6
+	#define	NAND_MEMCOPY_DMA	DMA_CH6
 	#define	I2C_DMACH			7
 	#define	DSP_DMACH			30
-	#define	CRC_DMACH			31
+	#define	CRC_DMA				DMA_CH31
+
+	// ++++++++++++++	EVENT	++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+	#define EVENT_NAND_1	0
+	//#define EVENT_NAND_2	1
+	//#define EVENT_NAND_3	2
+	#define EVENT_MANR_1	3
+	#define EVENT_MANR_2	4
+
+	// ++++++++++++++	TC	++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+	//#define	nandTC			HW::TC0
+	//#define				HW::TC1
+	#define ManTT 			HW::TC2
+	#define ManIT 			HW::TC3
+	//#define 				HW::TC4
+	//#define 				HW::TC5
+	//#define 				HW::TC6
+	//#define nandTC			HW::TC7
+
+	// ++++++++++++++	TCC	++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+	//#define				HW::TCC0
+	//#define				HW::TCC1
+	#define ManRT			HW::TCC2
+	//#define SyncTmr			HW::TCC3
+	//#define RotTmr			HW::TCC4
+	#define nandTCC			HW::TCC4
+
+	// ++++++++++++++	I2C	++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 	#define I2C				HW::I2C3
 	#define PIO_I2C			HW::PIOA 
@@ -52,6 +92,8 @@
 	#define SCL				(1<<PIN_SCL) 
 	#define I2C_TRIGSRC_RX	DMCH_TRIGSRC_SERCOM3_RX
 	#define I2C_TRIGSRC_TX	DMCH_TRIGSRC_SERCOM3_TX
+
+	// ++++++++++++++	SPI	++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 	#define SPI				HW::SPI0
 	#define PIO_SPCK		HW::PIOA
@@ -78,52 +120,48 @@
 	#define Pin_SPI_IRQ_Clr() HW::PIOB->BCLR(15)		
 
 
-	#define EVENT_NAND_1	0
-	//#define EVENT_NAND_2	1
-	//#define EVENT_NAND_3	2
-	#define EVENT_MANR_1	3
-	#define EVENT_MANR_2	4
+	// ++++++++++++++	MANCH	++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
-	#define ManTT			HW::TC0
-	#define ManIT			HW::TC1
-	//#define 				HW::TC2
-	//#define 				HW::TC3
-	//#define 				HW::TC4
-	//#define 				HW::TC5
-	//#define 				HW::TC6
-	//#define 				HW::TC7
+	#define MAN_GEN			GEN_1M
+	#define MAN_GEN_CLK		1000000
+	#define US2MT(v)		(((v)*MAN_GEN_CLK+500000)/1000000)
+	#define BAUD2CLK(x)		((u32)(MAN_GEN_CLK/(x)+0.5))
 
-	#define nandTCC			HW::TCC0
-	//#define				HW::TCC1
-	#define ManRT			HW::TCC2
-	#define SyncTmr			HW::TCC3
-	#define RotTmr			HW::TCC4
-	//#define MltTmr			HW::TCC4
-
-	#define MT(v)			(v)
-	#define BAUD2CLK(x)		((u32)(1000000/x+0.5))
-
-	#define MANT_IRQ_2		TCC0_IRQ
-	#define MANT_IRQ		TC0_IRQ
+	#define MANT_IRQ		TC2_IRQ
+	#define MANT_IRQ_2		TCC2_IRQ
 	#define MANR_IRQ		TCC2_1_IRQ
 	//#define MANR_EXTINT		11
 	#define MANR_EXTINT		7
 
-	#define ManT_SET_PR(v)				//{ ManTT->PERB = (v); }
-	#define ManT_SET_CR(v)				//{ ManTT->CCB[0] = (v); ManTT->CCB[1] = (v); }
+	#define ManT_SET_PR(v)				{ ManRT->PERBUF = (v); }
+	#define ManT_SET_CR(v)				{ ManRT->CCBUF[0] = (v); ManRT->CCBUF[1] = (v); }
+	#define ManT_SHADOW_SYNC()			
+
+	inline void MANTT_ClockEnable()  { HW::GCLK->PCHCTRL[GCLK_TC2_TC3]		= GCLK_GEN(MAN_GEN)|GCLK_CHEN; HW::MCLK->ClockEnable(PID_TC2); }
+	inline void MANRT_ClockEnable()  { HW::GCLK->PCHCTRL[GCLK_TCC2_TCC3]	= GCLK_GEN(MAN_GEN)|GCLK_CHEN; HW::MCLK->ClockEnable(PID_TCC2); }
+	inline void MANIT_ClockEnable()  { HW::GCLK->PCHCTRL[GCLK_TC2_TC3]		= GCLK_GEN(MAN_GEN)|GCLK_CHEN; HW::MCLK->ClockEnable(PID_TC3); }
 	
 	#define PIO_MANCH		HW::PIOC
-	#define PIN_MAN_TX1		13
-	#define PIN_MAN_TX2		14 
+	#define PIN_L1			13 
+	#define PIN_L2			14 
 
-	#define MAN_TX1			(1UL<<PIN_MAN_TX1)
-	#define MAN_TX2			(1UL<<PIN_MAN_TX2)
+	#define L1				(1UL<<PIN_L1)
+	#define L2				(1UL<<PIN_L2)
+	#define H1				0
+	#define H2				0
 
-	#define PIO_MAN_RX		HW::PIOA
+	//#define PIO_MANCH		HW::PIOC
+	//#define PIN_MAN_TX1		13
+	//#define PIN_MAN_TX2		14 
+
+	//#define MAN_TX1			(1UL<<PIN_MAN_TX1)
+	//#define MAN_TX2			(1UL<<PIN_MAN_TX2)
+
+	#define PIO_MANCHRX		HW::PIOA
 	#define PIO_RXD			HW::PIOB
-	#define PIN_MAN_RX		11
+	#define PIN_MANCHRX		11
 	#define PIN_RXD			23
-	#define MAN_RX			(1UL<<PIN_MAN_RX)
+	#define MANCHRX			(1UL<<PIN_MANCHRX)
 	#define RXD				(1UL<<PIN_RXD)
 
 
@@ -138,6 +176,8 @@
 
 	#define Pin_ManRcvSync_Set()	HW::PIOB->BSET(18)		
 	#define Pin_ManRcvSync_Clr()	HW::PIOB->BCLR(18)		
+
+	// ++++++++++++++	NAND Flash	++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 	#define PIO_NAND_DATA	HW::PIOA
 	#define PIO_ALE			HW::PIOB 
@@ -169,20 +209,63 @@
 	#define ALE				(1UL<<PIN_ALE) 
 	#define CLE				(1UL<<PIN_CLE) 
 
+	#define PIN_WE_CFG		PINGFG_DRVSTR 
+	#define PIN_RE_CFG		PINGFG_DRVSTR 
+
+	#define NAND_WE_PER		NS2CLK(60)-1	
+	#define NAND_WE_CC0		NS2CLK(30) 
+	#define NAND_WE_CC1		NS2CLK(30)
+
+	#ifdef nandTCC
+	
+		#define NAND_RE_PER		(NS2CLK(60)-1)
+		#define NAND_RE_CC0		NS2CLK(35) 
+		#define NAND_RE_CC1		NS2CLK(30)
+
+		#define WE_PORT_PMUX	(PORT_PMUX_F) 
+		#define RE_PORT_PMUX	(PORT_PMUX_F) 
+
+		inline void NAND_ClockEnable()  { HW::GCLK->PCHCTRL[GCLK_TCC4] = GCLK_GEN(GEN_MCK)|GCLK_CHEN; HW::MCLK->ClockEnable(PID_TCC4); }
+
+		#define NAND_TRIGSRC_MC0  DMCH_TRIGSRC_TCC4_MC0
+		#define NAND_TRIGSRC_MC1  DMCH_TRIGSRC_TCC4_MC1
+
+		#define NAND_EVENT_GEN		EVGEN_DMAC_CH_0
+		#define NAND_EVSYS_USER		EVSYS_USER_TCC4_EV_1
+
+	#else
+
+		#define NAND_RE_PER		250	
+		//#define NAND_RE_CC0		NS2CLK(35) 
+		#define NAND_RE_CC1		NS2CLK(25)
+
+		#define WE_PORT_PMUX	(PORT_PMUX_E) 
+		#define RE_PORT_PMUX	(PORT_PMUX_E) 
+
+		inline void NAND_ClockEnable()  { HW::GCLK->PCHCTRL[GCLK_TC0_TC1] = GCLK_GEN(GEN_MCK)|GCLK_CHEN; HW::MCLK->ClockEnable(PID_TC0); }
+
+		#define NAND_TRIGSRC_MC0  DMCH_TRIGSRC_TC0_MC0
+		#define NAND_TRIGSRC_MC1  DMCH_TRIGSRC_TC0_MC1
+
+		#define NAND_EVENT_GEN		EVGEN_DMAC_CH_0
+		#define NAND_EVSYS_USER		EVSYS_USER_TC0_EVU
+
+	#endif
+
+	// ++++++++++++++	VCORE	++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
 	#define PIO_ENVCORE		HW::PIOC
-	#define PIN_ENVCORE		14 
+	#define PIN_ENVCORE		5 
 	#define ENVCORE			(1<<PIN_ENVCORE) 
 	
+	// ++++++++++++++	RESET	++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
 	#define PIN_RESET		10
 	#define PIO_RESET		HW::PIOC
 	#define RESET			(1<<PIN_RESET)
 
 
-
-//	#define WP				(1<<6) 
-//	#define FCS1			(1<<5) 
-//	#define FCS2			(1<<6) 
-//	#define RB				(1<<7) 
+	// ++++++++++++++	USART	++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 	#define PIO_USART0		HW::PIOB 
 	#define PIO_USART1		HW::PIOB 
@@ -201,6 +284,8 @@
 	#define URXD1			(1<<PIN_URXD1) 
 	#define UTXD2			(1<<PIN_UTXD2) 
 	#define URXD2			(1<<PIN_URXD2) 
+
+	// ++++++++++++++	CLOCK	++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 	#define CLOCK_EXTINT	7
 	#define CLOCK_IRQ		(EIC_0_IRQ+CLOCK_EXTINT)
