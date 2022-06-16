@@ -1418,6 +1418,7 @@ void InitHardware()
 #endif
 
 	Init_time(MCK);
+	RTT_Init();
 	I2C_Init();
 	SPI_Init();
 
