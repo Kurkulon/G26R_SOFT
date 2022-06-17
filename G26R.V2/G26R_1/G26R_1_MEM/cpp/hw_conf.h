@@ -31,16 +31,28 @@
 #ifdef CPU_SAME53	
 
 	// Test Pins
+	// 13	- PB06	- ManTrmIRQ2
+	// 14	- PB07	
+	// 22	- PC06	
+	// 23	- PC07	
+	// 29	- PA11	
 	// 37	- PB15	- SPI_Handler
+	// 41	- PC11
 	// 42	- PC12
-	// 43	- PC13
 	// 52	- PA16
+	// 56	- PC16
 	// 57	- PC17
 	// 58	- PC18
 	// 59	- PC19
+	// 61	- PC21
+	// 64	- PB16
+	// 65	- PB17
 	// 66	- PB18	- ManRcvIRQ sync true
 	// 74	- PA24	- ManRcvIRQ
 	// 75	- PA25	- main loop
+	// 82	- PC24
+	// 84	- PC26
+	// 87	- PA27
 
 
 	// ++++++++++++++	GEN	++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -79,9 +91,9 @@
 
 	// ++++++++++++++	TC	++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
-	//#define	NAND_TC				TC0
+	//#define	NAND_TC			TC0
 	//#define					TC1
-	#define MANT_TC				TC2
+	//#define MANT_TC				TC2
 	#define MANI_TC				TC3
 	//#define 					TC4
 	//#define 					TC5
@@ -127,9 +139,9 @@
 
 	// ++++++++++++++	TCC	++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
-	//#define					TCC0
-	//#define					TCC1
-	#define MANR_TCC			TCC2
+	#define MANT_TCC			TCC0
+	#define MANR_TCC			TCC1
+	//#define					TCC2
 	//#define					TCC3
 	#define NAND_TCC			TCC4
 
@@ -199,55 +211,26 @@
 
 	// ++++++++++++++	MANCH	++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
-	#define MANR_GEN			CONCAT2(GEN_,MANR_TCC)
-	#define MANR_PRESC_NUM		64
-	#define MANR_PRESC_DIV		CONCAT2(TCC_PRESCALER_DIV,MANR_PRESC_NUM)
-	#define MANR_GEN_CLK		CONCAT2(CLK_,MANR_TCC) 
-	#define US2MR(v)			(((v)*(MANR_GEN_CLK/MANR_PRESC_NUM)+500000)/1000000)
-	
-	#define MANT_GEN			CONCAT2(GEN_,TC2)
-	#define MANT_PRESC_NUM		64
-	#define MANT_PRESC_DIV		CONCAT2(TC_PRESCALER_DIV,MANT_PRESC_NUM)
-	#define MANT_GEN_CLK		CONCAT2(CLK_,MANT_TC) 
-	#define BAUD2CLK(x)			((u32)(MANT_GEN_CLK/MANT_PRESC_NUM/(x)+0.5))
-
-	#define MANI_GEN			CONCAT2(GEN_,MANI_TC)
-	#define MANI_PRESC_NUM		64
-	#define MANI_PRESC_DIV		CONCAT2(TC_PRESCALER_DIV,MANI_PRESC_NUM)
-	#define MANI_GEN_CLK		CONCAT2(CLK_,MANI_TC) 
-	#define US2MI(v)			(((v)*(MANI_GEN_CLK/MANI_PRESC_NUM)+500000)/1000000)
-
-	#define MNTTC				HW::MANT_TC
-	#define MNITC				HW::MANI_TC
-	#define MNRTCC				HW::MANR_TCC
-
-	#define MANT_IRQ			TC2_IRQ
-	#define MANT_IRQ_2			TCC2_IRQ
-	#define MANR_IRQ			CONCAT2(MANR_TCC,_1_IRQ)
+	//#define MANR_PRESC_NUM		64
+	//#define MANI_PRESC_NUM		64
+	//#define MANR_EXTINT			7
 	//#define MANR_EXTINT		15
-	#define MANR_EXTINT			7
-
-	#define MANIT_EVSYS_USER	CONCAT3(EVSYS_USER_, MANI_TC, _EVU)
-	#define MANRT_EVENT_GEN		CONCAT3(EVGEN_, MANI_TC, _OVF)
-	#define MANRT_EVSYS_USER	CONCAT3(EVSYS_USER_,MANR_TCC,_MC_0)
-
-
-	#define ManT_SET_PR(v)			{ MNRTCC->PERBUF = (v); }
-	#define ManT_SET_CR(v)			{ MNRTCC->CCBUF[0] = (v); MNRTCC->CCBUF[1] = (v); }
-	#define ManT_SHADOW_SYNC()			
-
-	inline void MANTT_ClockEnable()  { HW::GCLK->PCHCTRL[CONCAT2(GCLK_,MANT_TC)]	= MANT_GEN|GCLK_CHEN;	HW::MCLK->ClockEnable(CONCAT2(PID_,MANT_TC)); }
-	inline void MANRT_ClockEnable()  { HW::GCLK->PCHCTRL[CONCAT2(GCLK_,MANR_TCC)]	= MANR_GEN|GCLK_CHEN; HW::MCLK->ClockEnable(CONCAT2(PID_,MANR_TCC)); }
-	inline void MANIT_ClockEnable()  { HW::GCLK->PCHCTRL[CONCAT2(GCLK_,MANI_TC)]	= MANI_GEN|GCLK_CHEN; HW::MCLK->ClockEnable(CONCAT2(PID_,MANI_TC)); }
 	
 	#define PIO_MANCH		HW::PIOC
 	#define PIN_L1			13 
 	#define PIN_L2			14 
+	#define MANCH_PMUX		PORT_PMUX_F
+	#define L1_WO_NUM		3
+	#define L2_WO_NUM		4
 
 	#define L1				(1UL<<PIN_L1)
 	#define L2				(1UL<<PIN_L2)
 	#define H1				0
 	#define H2				0
+
+	#define PIO_RXD			HW::PIOB
+	#define PIN_RXD			23
+	#define RXD				(1UL<<PIN_RXD)
 
 	//#define PIO_MANCH		HW::PIOC
 	//#define PIN_MAN_TX1		13
@@ -256,12 +239,7 @@
 	//#define MAN_TX1			(1UL<<PIN_MAN_TX1)
 	//#define MAN_TX2			(1UL<<PIN_MAN_TX2)
 
-	#define PIO_MANCHRX		HW::PIOA
-	#define PIO_RXD			HW::PIOB
-	#define PIN_MANCHRX		11
-	#define PIN_RXD			23
-	#define MANCHRX			(1UL<<PIN_MANCHRX)
-	#define RXD				(1UL<<PIN_RXD)
+	//#define PIO_MANCHRX		HW::PIOA
 
 
 
@@ -270,8 +248,8 @@
 	#define Pin_ManRcvIRQ_Set()	HW::PIOA->BSET(24)
 	#define Pin_ManRcvIRQ_Clr()	HW::PIOA->BCLR(24)
 
-	#define Pin_ManTrmIRQ_Set()	HW::PIOB->BSET(21)		
-	#define Pin_ManTrmIRQ_Clr()	HW::PIOB->BCLR(21)		
+	#define Pin_ManTrmIRQ_Set()	HW::PIOB->BSET(6)		
+	#define Pin_ManTrmIRQ_Clr()	HW::PIOB->BCLR(6)		
 
 	#define Pin_ManRcvSync_Set()	HW::PIOB->BSET(18)		
 	#define Pin_ManRcvSync_Clr()	HW::PIOB->BCLR(18)		
