@@ -837,7 +837,7 @@ static void InitClock()
 
 static void WDT_Init()
 {
-	SEGGER_RTT_WriteString(0, RTT_CTRL_TEXT_BRIGHT_WHITE "Manchester transmit Init ... ");
+	SEGGER_RTT_WriteString(0, RTT_CTRL_TEXT_BRIGHT_YELLOW "WDT Init ... ");
 
 	#ifdef CPU_SAME53	
 
@@ -873,7 +873,7 @@ static void WDT_Init()
 
 	#endif
 
-	SEGGER_RTT_WriteString(0, "OK\n");
+	SEGGER_RTT_WriteString(0, RTT_CTRL_TEXT_BRIGHT_GREEN "OK\n");
 }
 
 

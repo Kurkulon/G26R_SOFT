@@ -2781,7 +2781,7 @@ static void LoadVars()
 		if (p.CRC.w == 0) { c2 = true; break; };
 	};
 
-	SEGGER_RTT_WriteString(0, "FRAM SPI - "); SEGGER_RTT_WriteString(0, (c1) ? (RTT_CTRL_TEXT_BRIGHT_GREEN "OK\n") : (RTT_CTRL_TEXT_BRIGHT_RED "ERROR"));
+	SEGGER_RTT_WriteString(0, "FRAM SPI - "); SEGGER_RTT_WriteString(0, (c1) ? (RTT_CTRL_TEXT_BRIGHT_GREEN "OK") : (RTT_CTRL_TEXT_BRIGHT_RED "ERROR"));
 
 	SEGGER_RTT_WriteString(0, RTT_CTRL_TEXT_BRIGHT_WHITE " - FRAM I2C - "); SEGGER_RTT_WriteString(0, (c2) ? (RTT_CTRL_TEXT_BRIGHT_CYAN "OK\n") : (RTT_CTRL_TEXT_BRIGHT_RED "ERROR\n"));
 
@@ -2926,11 +2926,9 @@ static void UpdateParams()
 	switch(i++)
 	{
 		CALL( MainMode()				);
-		CALL( UpdateMoto()				);
 		CALL( UpdateTemp()				);
 		CALL( UpdateMan(); 				);
 		CALL( FLASH_Update();			);
-		CALL( UpdateHardware();			);
 		CALL( UpdateAccel();			);
 		CALL( UpdateI2C();				);
 		CALL( SaveVars();				);
@@ -2953,7 +2951,6 @@ static void UpdateMisc()
 	switch(i++)
 	{
 		CALL( UpdateEMAC();		);
-		CALL( UpdateDSP();		);
 		CALL( UpdateParams();	);
 	};
 
@@ -2980,6 +2977,7 @@ static void Update()
 	
 	if (!(IsComputerFind() && EmacIsConnected()))
 	{
+		UpdateHardware();
 		UpdateMisc();
 	};
 }

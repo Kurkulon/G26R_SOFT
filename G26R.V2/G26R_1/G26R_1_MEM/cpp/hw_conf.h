@@ -77,7 +77,7 @@
 	#define	SPI_DMACH_TX		4
 	#define	SPI_DMACH_RX		5
 	#define	NAND_MEMCOPY_DMA	DMA_CH6
-	#define	I2C_DMACH			7
+	#define	I2C_DMACH			DMA_CH7
 	#define	DSP_DMACH			30
 	#define	CRC_DMA				DMA_CH31
 
@@ -173,14 +173,20 @@
 	// ++++++++++++++	I2C	++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 	#define I2C_SERCOM_NUM		3
-	#define I2C					CONCAT2(HW::I2C,I2C_SERCOM_NUM)
+//	#define I2C					CONCAT2(HW::I2C,I2C_SERCOM_NUM)
 	#define PIO_I2C				HW::PIOA 
 	#define PIN_SDA				22 
 	#define PIN_SCL				23 
 	#define SDA					(1<<PIN_SDA) 
 	#define SCL					(1<<PIN_SCL) 
-	#define I2C_TRIGSRC_RX		CONCAT3(DMCH_TRIGSRC_SERCOM,I2C_SERCOM_NUM,_RX)
-	#define I2C_TRIGSRC_TX		CONCAT3(DMCH_TRIGSRC_SERCOM,I2C_SERCOM_NUM,_TX)
+	#define I2C_PMUX_SDA		PORT_PMUX_C 
+	#define I2C_PMUX_SCL		PORT_PMUX_C 
+	#define I2C_GEN_SRC			GEN_MCK
+	#define I2C_GEN_CLK			GEN_MCK_CLK
+	#define I2C_BAUDRATE		400000 
+
+	//#define I2C_TRIGSRC_RX		CONCAT3(DMCH_TRIGSRC_SERCOM,I2C_SERCOM_NUM,_RX)
+	//#define I2C_TRIGSRC_TX		CONCAT3(DMCH_TRIGSRC_SERCOM,I2C_SERCOM_NUM,_TX)
 
 	// ++++++++++++++	SPI	++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
