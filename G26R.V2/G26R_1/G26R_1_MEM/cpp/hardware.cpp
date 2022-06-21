@@ -150,20 +150,23 @@ extern "C" void SystemInit()
 
 		HW::PIOA->BSET(25);
 
-		//HW::SUPC->BOD33 = 0;
-		//HW::SUPC->BOD33 = BOD33_HYST(15) | BOD33_ACTION_INT| BOD33_LEVEL(200); // Vbod = 1.5 + 6mV * BOD33_LEVEL
-		//HW::SUPC->BOD33 |= BOD33_ENABLE;
+		//if ((HW::SUPC->BOD33 & BOD33_ENABLE) == 0)
+		//{
+		//	HW::SUPC->BOD33 = 0;
+		//	HW::SUPC->BOD33 = BOD33_HYST(15) | BOD33_ACTION_INT| BOD33_LEVEL(200); // Vbod = 1.5 + 6mV * BOD33_LEVEL
+		//	HW::SUPC->BOD33 |= BOD33_ENABLE;
 
-		//HW::PIOA->BCLR(25);
+		//	HW::PIOA->BCLR(25);
 
-		//while ((HW::SUPC->STATUS & (SUPC_BOD33RDY|SUPC_B33SRDY)) != (SUPC_BOD33RDY|SUPC_B33SRDY));
-		//while ((HW::SUPC->STATUS & SUPC_BOD33DET) != 0);
+		//	while ((HW::SUPC->STATUS & (SUPC_BOD33RDY|SUPC_B33SRDY)) != (SUPC_BOD33RDY|SUPC_B33SRDY));
+		//	while ((HW::SUPC->STATUS & SUPC_BOD33DET) != 0);
 
-		//HW::PIOA->BSET(25);
+		//	HW::PIOA->BSET(25);
 
-		//HW::SUPC->BOD33 = 0;
-		//HW::SUPC->BOD33 = BOD33_HYST(15) | BOD33_ACTION_RESET | BOD33_LEVEL(200); // Vbod = 1.5 + 6mV * BOD33_LEVEL
-		//HW::SUPC->BOD33 |= BOD33_ENABLE;
+		//	HW::SUPC->BOD33 = 0;
+		//	HW::SUPC->BOD33 = BOD33_HYST(15) | BOD33_ACTION_RESET | BOD33_LEVEL(200); // Vbod = 1.5 + 6mV * BOD33_LEVEL
+		//	HW::SUPC->BOD33 |= BOD33_ENABLE;
+		//};
 
 		HW::PIOA->BCLR(25);
 
@@ -886,69 +889,6 @@ static void WDT_Init()
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-
-void DSP_CopyDataDMA(volatile void *src, volatile void *dst, u16 len)
-{
-#ifndef WIN32
-
-	using namespace HW;
-
-	#ifdef CPU_SAME53	
-
-		DmaTable[DSP_DMACH].SRCADDR = (byte*)src+len;
-		DmaTable[DSP_DMACH].DSTADDR = (byte*)dst+len;
-		DmaTable[DSP_DMACH].DESCADDR = 0;
-		DmaTable[DSP_DMACH].BTCNT = len;
-		DmaTable[DSP_DMACH].BTCTRL = DMDSC_VALID|DMDSC_BEATSIZE_BYTE|DMDSC_DSTINC|DMDSC_SRCINC;
-
-		DMAC->CH[DSP_DMACH].INTENCLR = ~0;
-		DMAC->CH[DSP_DMACH].INTFLAG = ~0;
-		DMAC->CH[DSP_DMACH].CTRLA = DMCH_ENABLE|DMCH_TRIGACT_TRANSACTION;
-		DMAC->SWTRIGCTRL = 1UL<<DSP_DMACH;
-
-	#elif defined(CPU_XMC48)
-
-//		register u32 t __asm("r0");
-
-		if (len > BLOCK_TS(~0)) { len = BLOCK_TS(~0); };
-
-		DSP_DMA->DMACFGREG = 1;
-
-		DSP_DMACH->CTLL = DST_INC|SRC_INC|TT_FC(0)|DEST_MSIZE(0)|SRC_MSIZE(0);
-		DSP_DMACH->CTLH = BLOCK_TS(len);
-
-		DSP_DMACH->SAR = (u32)src;
-		DSP_DMACH->DAR = (u32)dst;
-		DSP_DMACH->CFGL = 0;
-		DSP_DMACH->CFGH = PROTCTL(1);
-
-		DSP_DMA->CHENREG = DSP_DMA_CHEN;
-
-	#endif
-#else
-
-#endif
-}
-
-//++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-
-bool DSP_CheckDataComplete()
-{
-	#ifdef CPU_SAME53
-
-	return (HW::DMAC->CH[DSP_DMACH].CTRLA & DMCH_ENABLE) == 0 || (HW::DMAC->CH[DSP_DMACH].INTFLAG & DMCH_TCMPL);
-	
-	#elif defined(CPU_XMC48)
-
-		return (DSP_DMA->CHENREG & DSP_DMA_CHST) == 0;
-
-	#elif defined(WIN32)
-
-		return true;
-		
-	#endif
-}
-
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
@@ -1401,11 +1341,13 @@ void InitHardware()
 
 //	HW::GCLK->GENCTRL[GEN_500K] = GCLK_DIV(50)	|GCLK_SRC_XOSC1		|GCLK_GENEN;
 
-
 	HW::MCLK->APBAMASK |= APBA_EIC;
 	HW::GCLK->PCHCTRL[GCLK_EIC] = GCLK_GEN(GEN_MCK)|GCLK_CHEN;
 
+	EIC->CTRLA = EIC_SWRST; while(EIC->SYNCBUSY);
+
 	HW::MCLK->APBBMASK |= APBB_EVSYS;
+	EVSYS->CTRLA = EVSYS_SWRST;
 
 	HW::GCLK->PCHCTRL[GCLK_SERCOM_SLOW]		= GCLK_GEN(GEN_32K)|GCLK_CHEN;	// 32 kHz
 	HW::GCLK->PCHCTRL[GCLK_SERCOM5_CORE]	= GCLK_GEN(GEN_MCK)|GCLK_CHEN;	

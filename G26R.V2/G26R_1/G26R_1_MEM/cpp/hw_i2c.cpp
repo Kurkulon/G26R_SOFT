@@ -70,6 +70,8 @@ static volatile bool busyWriteThread = false;
 
 #elif defined(CPU_SAME53)
 
+static S_I2C i2c(PIO_I2C, SCL, I2C_PMUX_SCL, PIO_I2C, SDA, I2C_PMUX_SDA, I2C_GEN_SRC, I2C_GEN_CLK, &I2C_DMACH );
+
 #elif defined(CPU_XMC48)
 
 #endif 
@@ -80,7 +82,6 @@ static volatile bool busyWriteThread = false;
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
-static S_I2C i2c(PIO_I2C, SCL, I2C_PMUX_SCL, PIO_I2C, SDA, I2C_PMUX_SDA, I2C_GEN_SRC, I2C_GEN_CLK, &I2C_DMACH );
 
 //List<DSCI2C>	i2c_ReqList;
 //DSCI2C*			i2c_dsc = 0;
