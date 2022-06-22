@@ -77,10 +77,10 @@ DmaTable		SPACE	DmaTableSize
 ;                             <0x43218765=>CRP Level 3 (ARE YOU SURE?)
 ;                             <0x4E697370=>NO ISP (ARE YOU SURE?)
 ; </h>
-                IF      :LNOT::DEF:NO_CRP
-                AREA    |.ARM.__at_0x02FC|, CODE, READONLY
-                DCD     0xFFFFFFFF
-                ENDIF
+;               IF      :LNOT::DEF:NO_CRP
+;               AREA    |.ARM.__at_0x02FC|, CODE, READONLY
+;               DCD     0xFFFFFFFF
+;				ENDIF
 
 ;+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++			
 

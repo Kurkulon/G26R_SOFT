@@ -733,10 +733,10 @@ static void CallBackMotoReq(Ptr<REQ> &q)
 
 		if (rsp.rw == 0x101)
 		{
-			motoRPS = rsp.rpm;
-			motoCur = rsp.current;
+			//motoRPS = rsp.rpm;
+			//motoCur = rsp.current;
 			//motoStat = rsp.mororStatus;
-			motoCounter = rsp.motoCounter;
+			//motoCounter = rsp.motoCounter;
 			motoRcvCount++;
 		};
 	};
@@ -778,10 +778,7 @@ static Ptr<REQ> CreateMotoReq()
 	q.rb.maxLen = sizeof(rsp);
 	
 	req.rw = 0x101;
-	req.enableMotor	= 1;
-	req.tRPM = motoTargetRPS;
-	req.limCurrent = mv.motoLimCur;
-	req.maxCurrent = mv.motoMaxCur;
+	req.reqHV = 0;
 	req.crc	= GetCRC16(&req, sizeof(req)-2);
 
 	return &q;
@@ -2565,8 +2562,8 @@ static const u32 motoFlashPages[] = {
 u16 motoFlashLen = 0;
 u16 motoFlashCRC = 0;
 
-#define SGUID	0x0A89D55DD5274785 
-#define MGUID	0x9119CC18AC79DE35
+#define SGUID	0x53EE4AA1A6944D07
+#define MGUID	0x60F1952B63424888
 
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
@@ -2589,9 +2586,13 @@ static void FlashMoto()
 
 	tm.Reset();
 
+	while(!tm.Check(MS2RT(1)));
+
+	EnableLPC();
+
 	bool hs = false;
 
-	while (!tm.Check(200))
+	while (!tm.Check(2000))
 	{
 		reqHS.guid = masterGUID;
 		reqHS.crc = GetCRC16(&reqHS, sizeof(reqHS) - sizeof(reqHS.crc));
@@ -2932,6 +2933,7 @@ static void UpdateParams()
 		CALL( UpdateAccel();			);
 		CALL( UpdateI2C();				);
 		CALL( SaveVars();				);
+		CALL( UpdateMoto();				);
 	};
 
 	i = (i > (__LINE__-S-3)) ? 0 : i;
@@ -3023,7 +3025,8 @@ int main()
 
 #ifndef WIN32
 
-	//DisableDSP();
+	DisableLPC();
+	DisableDSP();
 
 #endif
 
@@ -3047,11 +3050,11 @@ int main()
 	comdsp.Connect(ComPort::ASYNC, 2, 6250000, 2, 1);
 	//commem.Connect(ComPort::ASYNC, 1, 6250000, 0, 1);
 
-	//EnableDSP();
-
 	//__breakpoint(0);
 
-	//FlashMoto();
+	FlashMoto();
+
+	EnableDSP();
 
 	//FlashDSP();
 

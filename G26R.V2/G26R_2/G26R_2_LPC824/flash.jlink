@@ -3,5 +3,5 @@ speed 2000
 r
 h
 exec device = LPC824M201
-loadbin obj\G26RLPC824.bin,0x00000000
+loadbin obj\G26R_2_LPC824.bin,0x00002000
 exit

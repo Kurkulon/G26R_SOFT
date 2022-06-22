@@ -29,8 +29,8 @@ extern void InitHardware();
 extern void UpdateHardware();
 extern void SetClock(const RTC &t);
 
-extern void EnableDSP();	
-extern void DisableDSP();	
+extern void EnableLPC();	
+extern void DisableLPC();	
 
 extern void EnableDSP();	
 extern void DisableDSP();	

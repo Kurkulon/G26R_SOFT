@@ -109,8 +109,11 @@ static bool busy_CRC_CCITT_DMA = false;
 
 __forceinline 	void EnableVCORE()	{ PIO_ENVCORE->SET(ENVCORE); 	}
 __forceinline 	void DisableVCORE()	{ PIO_ENVCORE->CLR(ENVCORE); 	}
-				void EnableDSP()	{ PIO_RESET->CLR(RESET); 		}
-				void DisableDSP()	{ PIO_RESET->SET(RESET); 		}
+				void EnableLPC()	{ PIO_RESET->CLR(RESET); 		}
+				void DisableLPC()	{ PIO_RESET->SET(RESET); 		}
+
+				void EnableDSP()	{ PIO_DSP_RESET->CLR(DSP_RESET); 		}
+				void DisableDSP()	{ PIO_DSP_RESET->SET(DSP_RESET); 		}
 
 #endif
 

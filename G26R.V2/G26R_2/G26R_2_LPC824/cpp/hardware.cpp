@@ -30,10 +30,8 @@
 
 //u16 curHV = 0;
 //u16 reqHV = 800;
-u16 curADC = 0;
-u32 fcurADC = 0;
-u16 vAP = 0;
-u32 fvAP = 0;
+u16 curHV = 0;
+u16 reqHV = 0;
 //u32 tachoCount = 0;
 //i32 shaftPos = 0;
 //
@@ -67,7 +65,7 @@ extern "C" void SystemInit()
 	using namespace CM0;
 	using namespace HW;
 
-	SYSCON->SYSAHBCLKCTRL |= CLK::SWM_M | CLK::IOCON_M | CLK::GPIO_M | HW::CLK::MRT_M | HW::CLK::CRC_M | HW::CLK::WWDT_M;
+	SYSCON->SYSAHBCLKCTRL |= CLK::SWM_M | CLK::IOCON_M | CLK::GPIO_M | HW::CLK::MRT_M | HW::CLK::CRC_M | HW::CLK::WWDT_M | HW::CLK::UART0_M;
 
 	SYSCON->PDRUNCFG &= ~(1<<6); // WDTOSC_PD = 0
 
@@ -91,45 +89,20 @@ extern "C" void SystemInit()
 	SYSCON->MAINCLKUEN    = 1;					/* Update MCLK Clock Source */
 	while (!(SYSCON->MAINCLKUEN & 1));			/* Wait Until Updated       */
 
-//	SYSCON->SYSAHBCLKDIV  = SYSAHBCLKDIV_Val;
+	//SYSCON->SYSAHBCLKDIV  = SYSAHBCLKDIV_Val;
 
-	//SYSCON->UARTCLKDIV = 1;
-	//SWM->U0_RXD = 26;
-	//SWM->U0_TXD = 16;
+	SYSCON->UARTCLKDIV = 1;
+	SWM->U0_RXD = 26;
+	SWM->U0_TXD = 24;
+
+	DMA->SRAMBASE = DmaTable;
+	DMA->CTRL = 1;
 }
 
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
-//static void UpdateADC()
-//{
-//	using namespace HW;
-//
-//	static byte i = 0;
-//
-//	#define CALL(p) case (__LINE__-S): p; break;
-//
-//	enum C { S = (__LINE__+3) };
-//	switch(i++)
-//	{
-//		CALL( fcurADC += (((ADC->DAT0&0xFFF0) * 1800 ) >> 16) - curADC;	curADC = fcurADC >> 3;	);
-//		CALL( fvAP += (((ADC->DAT1&0xFFF0) * 3300) >> 16) - vAP; vAP = fvAP >> 3;	);
-//	};
-//
-////	i = (i > (__LINE__-S-3)) ? 0 : i;
-//	i &= 1;
-//
-//	#undef CALL
-//}
 
-//++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-
-//static __irq void Handler_SCT()
-//{
-//	HW::GPIO->MASK0 = ~(0xF<<17);
-//	HW::GPIO->MPIN0 = 0xF<<17;
-//
-//	HW::SCT->EVFLAG = 1<<3;
-//}
+//++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
@@ -388,6 +361,48 @@ static void UpdateTWI()
 			break;
 	};
 
+}
+
+//++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+static void UpdateADC()
+{
+	using namespace HW;
+
+	static byte i = 0;
+
+	#define CALL(p) case (__LINE__-S): p; break;
+
+	enum C { S = (__LINE__+3) };
+	switch(i++)
+	{
+		CALL( curHV = ((ADC->DAT0&0xFFF0) * 9091) >> 16; );
+		//CALL( fvAP += (((ADC->DAT1&0xFFF0) * 3300) >> 16) - vAP; vAP = fvAP >> 3;	);
+	};
+
+//	i = (i > (__LINE__-S-3)) ? 0 : i;
+	i &= 1;
+
+	#undef CALL
+}
+
+//++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+static void InitADC()
+{
+	using namespace HW;
+
+	SWM->PINENABLE0.B.ADC_2 = 0;
+
+	SYSCON->PDRUNCFG &= ~(1<<4);
+	SYSCON->SYSAHBCLKCTRL |= CLK::ADC_M;
+
+	ADC->CTRL = ADC_CTRL_CALMODE(1)|ADC_CTRL_CLKDIV(49);
+
+	while(ADC->CTRL & ADC_CTRL_CALMODE(1));
+
+	ADC->CTRL = ADC_CTRL_CLKDIV(24);
+	ADC->SEQA_CTRL = ADC_SEQ_CTRL_CHANNELS(4)|ADC_SEQ_CTRL_SEQ_ENA(1)|ADC_SEQ_CTRL_BURST(1);
 }
 
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++

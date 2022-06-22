@@ -430,6 +430,47 @@ namespace T_HW
 		LPC_REG  TRM;                               /*!< (@ 0x4001C06C) ADC trim register.                                     */
 	};
 
+	#define ADC_CTRL_CLKDIV_MASK                     (0xFFU)
+	#define ADC_CTRL_CLKDIV_SHIFT                    (0U)
+	#define ADC_CTRL_CLKDIV(x)                       (((u32)(((u32)(x)) << ADC_CTRL_CLKDIV_SHIFT)) & ADC_CTRL_CLKDIV_MASK)
+	#define ADC_CTRL_LPWRMODE_MASK                   (0x400U)
+	#define ADC_CTRL_LPWRMODE_SHIFT                  (10U)
+	#define ADC_CTRL_LPWRMODE(x)                     (((u32)(((u32)(x)) << ADC_CTRL_LPWRMODE_SHIFT)) & ADC_CTRL_LPWRMODE_MASK)
+	#define ADC_CTRL_CALMODE_MASK                    (0x40000000U)
+	#define ADC_CTRL_CALMODE_SHIFT                   (30U)
+	#define ADC_CTRL_CALMODE(x)                      (((u32)(((u32)(x)) << ADC_CTRL_CALMODE_SHIFT)) & ADC_CTRL_CALMODE_MASK) 
+
+	#define ADC_SEQ_CTRL_CHANNELS_MASK               (0xFFFU)
+	#define ADC_SEQ_CTRL_CHANNELS_SHIFT              (0U)
+	#define ADC_SEQ_CTRL_CHANNELS(x)                 (((u32)(((u32)(x)) << ADC_SEQ_CTRL_CHANNELS_SHIFT)) & ADC_SEQ_CTRL_CHANNELS_MASK)
+	#define ADC_SEQ_CTRL_TRIGGER_MASK                (0x7000U)
+	#define ADC_SEQ_CTRL_TRIGGER_SHIFT               (12U)
+	#define ADC_SEQ_CTRL_TRIGGER(x)                  (((u32)(((u32)(x)) << ADC_SEQ_CTRL_TRIGGER_SHIFT)) & ADC_SEQ_CTRL_TRIGGER_MASK)
+	#define ADC_SEQ_CTRL_TRIGPOL_MASK                (0x40000U)
+	#define ADC_SEQ_CTRL_TRIGPOL_SHIFT               (18U)
+	#define ADC_SEQ_CTRL_TRIGPOL(x)                  (((u32)(((u32)(x)) << ADC_SEQ_CTRL_TRIGPOL_SHIFT)) & ADC_SEQ_CTRL_TRIGPOL_MASK)
+	#define ADC_SEQ_CTRL_SYNCBYPASS_MASK             (0x80000U)
+	#define ADC_SEQ_CTRL_SYNCBYPASS_SHIFT            (19U)
+	#define ADC_SEQ_CTRL_SYNCBYPASS(x)               (((u32)(((u32)(x)) << ADC_SEQ_CTRL_SYNCBYPASS_SHIFT)) & ADC_SEQ_CTRL_SYNCBYPASS_MASK)
+	#define ADC_SEQ_CTRL_START_MASK                  (0x4000000U)
+	#define ADC_SEQ_CTRL_START_SHIFT                 (26U)
+	#define ADC_SEQ_CTRL_START(x)                    (((u32)(((u32)(x)) << ADC_SEQ_CTRL_START_SHIFT)) & ADC_SEQ_CTRL_START_MASK)
+	#define ADC_SEQ_CTRL_BURST_MASK                  (0x8000000U)
+	#define ADC_SEQ_CTRL_BURST_SHIFT                 (27U)
+	#define ADC_SEQ_CTRL_BURST(x)                    (((u32)(((u32)(x)) << ADC_SEQ_CTRL_BURST_SHIFT)) & ADC_SEQ_CTRL_BURST_MASK)
+	#define ADC_SEQ_CTRL_SINGLESTEP_MASK             (0x10000000U)
+	#define ADC_SEQ_CTRL_SINGLESTEP_SHIFT            (28U)
+	#define ADC_SEQ_CTRL_SINGLESTEP(x)               (((u32)(((u32)(x)) << ADC_SEQ_CTRL_SINGLESTEP_SHIFT)) & ADC_SEQ_CTRL_SINGLESTEP_MASK)
+	#define ADC_SEQ_CTRL_LOWPRIO_MASK                (0x20000000U)
+	#define ADC_SEQ_CTRL_LOWPRIO_SHIFT               (29U)
+	#define ADC_SEQ_CTRL_LOWPRIO(x)                  (((u32)(((u32)(x)) << ADC_SEQ_CTRL_LOWPRIO_SHIFT)) & ADC_SEQ_CTRL_LOWPRIO_MASK)
+	#define ADC_SEQ_CTRL_MODE_MASK                   (0x40000000U)
+	#define ADC_SEQ_CTRL_MODE_SHIFT                  (30U)
+	#define ADC_SEQ_CTRL_MODE(x)                     (((u32)(((u32)(x)) << ADC_SEQ_CTRL_MODE_SHIFT)) & ADC_SEQ_CTRL_MODE_MASK)
+	#define ADC_SEQ_CTRL_SEQ_ENA_MASK                (0x80000000U)
+	#define ADC_SEQ_CTRL_SEQ_ENA_SHIFT               (31U)
+	#define ADC_SEQ_CTRL_SEQ_ENA(x)                  (((u32)(((u32)(x)) << ADC_SEQ_CTRL_SEQ_ENA_SHIFT)) & ADC_SEQ_CTRL_SEQ_ENA_MASK) 
+
 	//++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 	struct S_GPIO
