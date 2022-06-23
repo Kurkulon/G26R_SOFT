@@ -48,7 +48,7 @@ struct RTM
 #define US2RT(x) ((x*32768+500000)/1000000)
 #define MS2RT(x) ((x*32768+500)/1000)
 
-inline u32 GetRTT() { return HW::RTC->COUNT; }
+inline u32 GetRTT() { /*while(HW::RTC->SYNCBUSY & RTC_COUNT);*/ return HW::RTC->COUNT; }
 
 struct RTM
 {

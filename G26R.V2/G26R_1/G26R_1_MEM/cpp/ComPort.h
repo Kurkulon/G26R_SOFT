@@ -4,6 +4,7 @@
 #include "types.h"
 #include "core.h"
 #include "hw_rtm.h"
+#include "time.h"
 
 #ifdef CPU_XMC48
 	#include "COM_DEF.h"
@@ -11,6 +12,9 @@
 
 #define COM_RS232 0
 #define COM_RS485 1
+
+#define US2COM(v) US2CLK(v)
+#define MS2COM(v) MS2CLK(v)
 
 class ComPort
 {
@@ -139,7 +143,6 @@ class ComPort
 	byte			_status485;
 	byte			_portNum;
 
-	u32				_startDmaCounter;
 	u32				_prevDmaCounter;
 
 	ReadBuffer		*_pReadBuffer;
@@ -158,7 +161,7 @@ class ComPort
 	dword			_postReadTimeout;
 	dword			_readTimeout;
 
-	RTM			_rtm;
+	CTM32			_rtm;
 
 	void 		EnableTransmit(void* src, word count);
 	void 		DisableTransmit();

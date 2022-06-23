@@ -413,8 +413,8 @@ Ptr<REQ> CreateDspReq01(u16 tryCount)
 	q.CallBack = CallBackDspReq01;
 	//q.rb = &rb;
 	//q.wb = &wb;
-	q.preTimeOut = MS2RT(1);
-	q.postTimeOut = US2RT(100);
+	q.preTimeOut = MS2COM(1);
+	q.postTimeOut = US2COM(100);
 	q.ready = false;
 	q.tryCount = tryCount;
 	//q.ptr = &r;
@@ -538,8 +538,8 @@ Ptr<REQ> CreateDspReq05(u16 tryCount)
 	REQ &q = *rq;
 
 	q.CallBack = CallBackDspReq05;
-	q.preTimeOut = MS2RT(10);
-	q.postTimeOut = US2RT(100);
+	q.preTimeOut = MS2COM(10);
+	q.postTimeOut = US2COM(100);
 	//q.rb = &rb;
 	//q.wb = &wb;
 	q.ready = false;
@@ -606,8 +606,8 @@ Ptr<REQ> CreateDspReq06(u16 stAdr, u16 count, void* data, u16 count2, void* data
 	REQ &q = *rq;
 
 	q.CallBack = CallBackDspReq06;
-	q.preTimeOut = MS2RT(500);
-	q.postTimeOut = US2RT(100);
+	q.preTimeOut = MS2COM(500);
+	q.postTimeOut = US2COM(100);
 	//q.rb = &rb;
 	//q.wb = &wb;
 	q.ready = false;
@@ -764,8 +764,8 @@ static Ptr<REQ> CreateMotoReq()
 	q.CallBack = CallBackMotoReq;
 	//q.rb = &rb;
 	//q.wb = &wb;
-	q.preTimeOut = MS2RT(1);
-	q.postTimeOut = 1;
+	q.preTimeOut = MS2COM(1);
+	q.postTimeOut = US2COM(100);
 	q.ready = false;
 	q.checkCRC = true;
 	q.updateCRC = false;
@@ -818,8 +818,8 @@ Ptr<REQ> CreateBootMotoReq01(u16 flashLen, u16 tryCount)
 	REQ &q = *rq;
 
 	q.CallBack = CallBackBootMotoReq01;
-	q.preTimeOut = MS2RT(10);
-	q.postTimeOut = US2RT(100);
+	q.preTimeOut = MS2COM(10);
+	q.postTimeOut = US2COM(100);
 	//q.rb = &rb;
 	//q.wb = &wb;
 	q.ready = false;
@@ -876,8 +876,8 @@ Ptr<REQ> CreateBootMotoReq02(u16 stAdr, u16 count, const u32* data, u16 tryCount
 	REQ &q = *rq;
 
 	q.CallBack = CallBackBootMotoReq02;
-	q.preTimeOut = MS2RT(300);
-	q.postTimeOut = US2RT(100);
+	q.preTimeOut = MS2COM(300);
+	q.postTimeOut = US2COM(100);
 	//q.rb = &rb;
 	//q.wb = &wb;
 	q.ready = false;
@@ -946,8 +946,8 @@ Ptr<REQ> CreateBootMotoReq03()
 	REQ &q = *rq;
 
 	q.CallBack = 0;
-	q.preTimeOut = MS2RT(10);
-	q.postTimeOut = US2RT(100);
+	q.preTimeOut = MS2COM(10);
+	q.postTimeOut = US2COM(100);
 	//q.rb = &rb;
 	//q.wb = &wb;
 	q.ready = false;
@@ -2457,6 +2457,8 @@ static void FlashDSP()
 
 	Ptr<REQ> req;
 
+	EnableDSP();
+
 	tm.Reset();
 
 	while (!tm.Check(100)) HW::WDT->Update();
@@ -2586,13 +2588,13 @@ static void FlashMoto()
 
 	tm.Reset();
 
-	while(!tm.Check(MS2RT(1)));
+	while(!tm.Check(1));
 
 	EnableLPC();
 
 	bool hs = false;
 
-	while (!tm.Check(2000))
+	while (!tm.Check(200))
 	{
 		reqHS.guid = masterGUID;
 		reqHS.crc = GetCRC16(&reqHS, sizeof(reqHS) - sizeof(reqHS.crc));
@@ -2605,19 +2607,24 @@ static void FlashMoto()
 
 		rb.data = &rspHS;
 		rb.maxLen = sizeof(rspHS);
-		commoto.Read(&rb, MS2RT(5), US2RT(100));
+		commoto.Read(&rb, MS2COM(5), US2COM(100));
 
-		while (commoto.Update()) HW::WDT->Update();;
+		while (commoto.Update()) HW::WDT->Update();
 
-		if (rb.recieved && rb.len == sizeof(rspHS) && GetCRC16(&rspHS, sizeof(rspHS)) == 0 && rspHS.guid == slaveGUID)
+		if (rb.recieved)
 		{
-			hs = true;
-			break;
+			if (rb.len == sizeof(rspHS) && GetCRC16(&rspHS, sizeof(rspHS)) == 0 && rspHS.guid == slaveGUID)
+			{
+				hs = true;
+				break;
+			};
 		};
 	};
 
 	if (hs)
 	{
+		while (!tm.Check(10))
+
 		req = CreateBootMotoReq01(motoFlashLen, 2);
 
 		qmoto.Add(req); while(!req->ready) { qmoto.Update(); HW::WDT->Update(); };
@@ -3011,7 +3018,7 @@ int main()
 
 //	static bool c = true;
 
-	//static byte buf[8192];
+	//static u32 buf[100];
 
 	//volatile byte * const FLD = (byte*)0x60000000;	
 	
@@ -3054,9 +3061,7 @@ int main()
 
 	FlashMoto();
 
-	EnableDSP();
-
-	//FlashDSP();
+	FlashDSP();
 
 #endif
 

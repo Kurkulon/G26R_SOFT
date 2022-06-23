@@ -109,11 +109,7 @@ static bool busy_CRC_CCITT_DMA = false;
 
 __forceinline 	void EnableVCORE()	{ PIO_ENVCORE->SET(ENVCORE); 	}
 __forceinline 	void DisableVCORE()	{ PIO_ENVCORE->CLR(ENVCORE); 	}
-				void EnableLPC()	{ PIO_RESET->CLR(RESET); 		}
-				void DisableLPC()	{ PIO_RESET->SET(RESET); 		}
 
-				void EnableDSP()	{ PIO_DSP_RESET->CLR(DSP_RESET); 		}
-				void DisableDSP()	{ PIO_DSP_RESET->SET(DSP_RESET); 		}
 
 #endif
 
@@ -148,8 +144,8 @@ extern "C" void SystemInit()
 		HW::PIOB->DIRSET = (1<<6)|(1<<7)|(1<<15)|(1<<16)|(1<<17)|(1<<18);
 		//HW::PIOB->WRCONFIG = ((1<<17)>>16) |PORT_HWSEL_HI|PORT_PMUX(11)|PORT_WRPINCFG|PORT_PMUXEN|PORT_WRPMUX;
 
-		HW::PIOC->DIRSET = (1<<5)|(1<<6)|(1<<7)|(1<<10)|(1<<11)|(1<<12)|(1<<13)|(1<<14)|(1<<15)|(1<<17)|(1<<18)|(1<<19)|(1<<21)|(1<<24)|(1<<26);
-		HW::PIOC->SET((1<<15));
+		HW::PIOC->DIRSET = (1<<1)|(1<<2)|(1<<5)|(1<<6)|(1<<7)|(1<<10)|(1<<11)|(1<<12)|(1<<13)|(1<<14)|(1<<15)|(1<<17)|(1<<18)|(1<<19)|(1<<21)|(1<<24)|(1<<26);
+		HW::PIOC->SET((1<<1)|(1<<2)|(1<<15));
 
 		HW::PIOA->BSET(25);
 

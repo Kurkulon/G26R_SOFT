@@ -359,7 +359,7 @@ bool HandShake()
 
 	for (byte i = 0; i < 2; i++)
 	{
-		com.Read(&rb, MS2CLK(100), US2CLK(100));
+		com.Read(&rb, MS2CLK(100), US2CLK(500));
 
 		HW::GPIO->BSET(12);
 
@@ -369,6 +369,8 @@ bool HandShake()
 		};
 
 		HW::GPIO->BCLR(12);
+
+		//for (u32 n = 0; n < 1000; n++) { HW::ResetWDT(); };
 
 		c = (rb.recieved && rb.len == sizeof(RspHS) && GetCRC16(rb.data, rb.len) == 0 && rsp.guid == masterGUID);
 

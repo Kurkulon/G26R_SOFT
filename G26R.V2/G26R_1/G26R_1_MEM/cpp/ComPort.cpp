@@ -6,6 +6,7 @@
 
 #include "ComPort.h"
 #include "hw_conf.h"
+#include "time.h"
 
 #ifdef _DEBUG_
 //	static const bool _debug = true;
@@ -496,7 +497,7 @@ void ComPort::EnableReceive(void* dst, word count)
 
 		_chdma->CTRLA = DMCH_ENABLE|DMCH_TRIGACT_BURST|_dma_trgsrc_rx;
 
-		_prevDmaCounter = count;
+		_dmawrb->BTCNT = _prevDmaCounter = count;
 		_dma_act_mask = 0x8000|(_dmaCh<<8);
 
 //		HW::DMAC->SWTRIGCTRL = 1 << _dmaCh;
@@ -656,7 +657,7 @@ bool ComPort::Update()
 
 			if (_prevDmaCounter == t)
 			{
-				if (_rtm.Timeout(_readTimeout))
+				if (_rtm.Timeout(_readTimeout) || _prevDmaCounter == 0)
 				{
 //					READ_PIN_CLR();
 

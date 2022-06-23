@@ -141,7 +141,7 @@ static void UpdateMan()
 
 			rb.data = buf;
 			rb.maxLen = sizeof(buf);
-			com.Read(&rb, (u32)-1, 10000);
+			com.Read(&rb, (u32)-1, 2500);
 			i++;
 
 			break;

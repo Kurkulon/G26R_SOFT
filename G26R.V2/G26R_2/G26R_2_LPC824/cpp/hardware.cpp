@@ -65,7 +65,7 @@ extern "C" void SystemInit()
 	using namespace CM0;
 	using namespace HW;
 
-	SYSCON->SYSAHBCLKCTRL |= CLK::SWM_M | CLK::IOCON_M | CLK::GPIO_M | HW::CLK::MRT_M | HW::CLK::CRC_M | HW::CLK::WWDT_M | HW::CLK::UART0_M;
+	SYSCON->SYSAHBCLKCTRL |= CLK::SWM_M | CLK::IOCON_M | CLK::GPIO_M | HW::CLK::MRT_M | HW::CLK::CRC_M | HW::CLK::WWDT_M | HW::CLK::UART0_M | HW::CLK::DMA_M;
 
 	SYSCON->PDRUNCFG &= ~(1<<6); // WDTOSC_PD = 0
 
@@ -420,9 +420,11 @@ void InitHardware()
 	SYSCON->PDRUNCFG &= ~(1<<6); // WDTOSC_PD = 0
 	SYSCON->WDTOSCCTRL = (1<<5)|1; 
 
+#ifndef _DEBUG
 	WDT->TC = 0x1FF;
 	WDT->MOD = 0x3;
 	ResetWDT();
+#endif
 }
 
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++

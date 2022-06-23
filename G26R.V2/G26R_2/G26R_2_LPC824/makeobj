@@ -14,7 +14,7 @@ bindir = $(%ARMCC50BIN)
 
 !ifeq version Debug
 
-debug_compiler_options = -O0 --debug
+debug_compiler_options = -O0 --debug -D_DEBUG
 debug_linker_options = 
 libsuffix=d
 
@@ -71,7 +71,7 @@ compiler_options = $(debug_compiler_options) --asm -g -c --cpu=CORTEX-M0plus --t
 
 ##################################################################################################
 
-asm_options = --cpu CORTEX-M0plus -g --apcs /interwork --xref --diag_style=ide --pd "__MICROLIB SETA 1" --pd "__PROGNAME__ SETS \"BOOT G26K.2(AS76C_MOTOR)-2.1\"" --cpreproc
+asm_options = --cpu CORTEX-M0plus -g --apcs /interwork --xref --diag_style=ide --pd "__MICROLIB SETA 1" --pd "__PROGNAME__ SETS \"KAPCAP G26R.2(12ÀÏ90_ÊËÞ×)-2.1\"" --cpreproc
 
 ##################################################################################################
 

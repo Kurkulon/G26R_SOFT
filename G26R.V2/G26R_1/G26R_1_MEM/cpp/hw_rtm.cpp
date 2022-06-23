@@ -32,9 +32,15 @@ void RTT_Init()
 
 		while(HW::RTC->CTRLA & RTC_SWRST);
 
-		HW::RTC->CTRLA = RTC_ENABLE|RTC_MODE_COUNT32|RTC_COUNTSYNC;
+		HW::RTC->CTRLA = RTC_MODE_COUNT32|RTC_COUNTSYNC|RTC_PRESC_DIV1;
+		HW::RTC->COUNT = 0;
+		HW::RTC->CTRLA |= RTC_ENABLE;
 
 		while(HW::RTC->SYNCBUSY != 0);
+
+		u32 t = HW::RTC->COUNT;
+
+		while(t == HW::RTC->COUNT);
 
 	#elif defined(CPU_XMC48)
 
