@@ -9,7 +9,7 @@ version = Release
 
 curdir = $+ $(%cdrive):$(%cwd) $-
 hdir = cpp
-libdir = $(curdir)\..\G26R_1_MEM\libs
+libdir = $(curdir)\..\..\..\..\G_LIBS_ARM
 bindir = $(%ARMCC50BIN)
 
 !ifeq version Debug
@@ -38,7 +38,7 @@ cpu_compiler_options = --cpu=CORTEX-M4.fp.sp --thumb
 cpu_asm_options = --cpu CORTEX-M4.fp.sp --apcs /interwork	--pd "__PROGNAME__ SETS \"BOOT G26R.1(12AP90_UPR)-2.1\""
 cpu_link_options = --cpu CORTEX-M4.fp.sp
 cpu_obj = $(objdir)\startup_CM4.o
-cpu_scatter = SAME53.sct
+cpu_scatter = $(libdir)\SAME53_BOOT.sct
 
 !else ifeq targetcpu XMC48
 
@@ -46,7 +46,7 @@ cpu_compiler_options = --cpu=CORTEX-M4.fp.sp --thumb
 cpu_asm_options = --cpu CORTEX-M4.fp.sp --apcs /interwork	--pd "__PROGNAME__ SETS \"BOOT G26R.1(12AP90_UPR)-2.1\""
 cpu_link_options = --cpu CORTEX-M4.fp.sp
 cpu_obj = $(objdir)\startup_CM4.o
-cpu_scatter = XMC48.sct
+cpu_scatter = $(libdir)\XMC48_BOOT.sct
 
 !else
 
@@ -73,7 +73,7 @@ libname = $(libdir)\$(targetcpu)_$(libsuffix).a
 .cpp:	$(cppdir)
 .o:	$(objdir)
 .h:	$(hdir)
-.s: $(cppdir)
+.s: $(libdir)\cpp
 .d:	$(objdir)
 
 
@@ -93,7 +93,7 @@ compiler_options = $(debug_compiler_options) $(cpu_compiler_options) --gnu --asm
 
 ##################################################################################################
 
-asm_options = $(cpu_asm_options) -g --xref --diag_style=ide --pd "__MICROLIB SETA 1" --cpreproc
+asm_options = $(cpu_asm_options) -g --xref --diag_style=ide --pd "__MICROLIB SETA 1" --pd "CPU_$(targetcpu) SETA 1" --cpreproc
 
 ##################################################################################################
 
@@ -150,9 +150,9 @@ $(objdir)\$(target_name).axf : $(cpu_obj) $(modules_obj)
 	
 ##################################################################################################
 
-$(objdir)\startup_CM4.o : $(curdir)\..\G26R_1_MEM\cpp\startup_CM4.s
-	@echo Assembling $[. ...
-	@$(bindir)\armasm $(asm_options) --list $(objdir)\$^&.lst  -o $(objdir)\$^. $[@	
+#$(objdir)\startup_CM4.o : $(curdir)\..\G26R_1_MEM\cpp\startup_CM4.s
+#	@echo Assembling $[. ...
+#	@$(bindir)\armasm $(asm_options) --list $(objdir)\$^&.lst  -o $(objdir)\$^. $[@	
 
 ##################################################################################################
 

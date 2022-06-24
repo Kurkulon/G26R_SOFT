@@ -195,13 +195,16 @@ void RequestQuery::Update()
 
 		case 6:
 
-			_req->ready = true;
 
 //			tm.Reset();
 
 			if (_req->CallBack != 0)
 			{
-				_req->CallBack(_req);
+				_req->ready = _req->CallBack(_req);
+			}
+			else
+			{
+				_req->ready = true;
 			};
 
 			_state = 0;

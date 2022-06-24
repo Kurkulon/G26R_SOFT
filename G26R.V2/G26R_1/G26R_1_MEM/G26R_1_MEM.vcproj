@@ -128,10 +128,6 @@
 				>
 			</File>
 			<File
-				RelativePath=".\cpp\ComPort.cpp"
-				>
-			</File>
-			<File
 				RelativePath=".\cpp\emac.cpp"
 				>
 			</File>
@@ -141,6 +137,10 @@
 			</File>
 			<File
 				RelativePath=".\cpp\hardware.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\cpp\hw_com.cpp"
 				>
 			</File>
 			<File
@@ -186,11 +186,11 @@
 				>
 			</File>
 			<File
-				RelativePath=".\cpp\ComPort.h"
+				RelativePath=".\cpp\hardware.h"
 				>
 			</File>
 			<File
-				RelativePath=".\cpp\hardware.h"
+				RelativePath=".\cpp\hw_com.h"
 				>
 			</File>
 			<File

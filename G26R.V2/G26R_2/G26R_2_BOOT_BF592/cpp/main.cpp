@@ -7,7 +7,7 @@
 
 static ComPort com;
 
-static u16 manReqWord = 0xAD00;
+static u16 manReqWord = 0xA900;
 static u16 manReqMask = 0xFF00;
 
 //static u16 numDevice = 1;
@@ -287,6 +287,15 @@ int main( void )
 
 	tm32.Reset(); timeOut = MS2RT(10000);
 
+	//static ComPort::WriteBuffer wb;
+	//static byte buf[4] = { 0xAA, 0xAA, 0xAA, 0xAA };
+
+	//wb.data = buf;
+	//wb.len = sizeof(buf);
+	//wb.transmited = false;
+
+	//com.Write(&wb);
+
 	while (1)
 	{
 		*pPORTFIO_SET = 1<<7;
@@ -295,6 +304,11 @@ int main( void )
 		FlashUpdate();
 
 		if (tm32.Check(timeOut)) RunMainApp();
+
+		//if (!com.Update())
+		//{
+		//	com.Write(&wb);
+		//};
 
 		*pPORTFIO_CLEAR = 1<<7;
 

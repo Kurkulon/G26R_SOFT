@@ -11,6 +11,7 @@
 #include "PointerCRC.h"
 #include "SEGGER_RTT.h"
 #include "hw_conf.h"
+#include "hw_com.h"
 
 #ifdef WIN32
 
@@ -104,8 +105,6 @@ static u16 memTrmBaud = 0;
 
 u16 txbuf[128 + 512 + 16];
 
-static ComPort comdsp;
-static ComPort commoto;
 
 static RequestQuery qmoto(&commoto);
 static RequestQuery qdsp(&comdsp);
@@ -175,7 +174,7 @@ static u16 curFireVoltage = 500;
 static u32 dspMMSEC = 0;
 static u32 shaftMMSEC = 0;
 
-const u16 dspReqWord = 0xAD00;
+const u16 dspReqWord = 0xA900;
 //const u16 dspReqMask = 0xFF00;
 
 static u16 manReqWord = 0xAD00;
@@ -323,49 +322,16 @@ static void SetModeIM()
 //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
-void CallBackDspReq01(Ptr<REQ> &q)
+bool CallBackDspReq01(Ptr<REQ> &q)
 {
-	RspDsp01 &rsp = *((RspDsp01*)q->rb.data);
+	RspDsp00 &rsp = *((RspDsp00*)q->rb.data);
 	 
-	if (q->rb.recieved)
+	if (q->rb.recieved && q->rb.len == sizeof(rsp) && rsp.rw == dspReqWord)
 	{
-		if (rsp.rw == (dspReqWord|0x40))
-		{
-			q->crcOK = (q->rb.len == (rsp.CM.sl*2 + 2 + sizeof(rsp.CM)-sizeof(rsp.CM.data)));
-			q->rsp->dataLen = q->rb.len;
+		q->crcOK = true;
 
-			dspStatus |= 1;
-			dspRcv40++;
-			dspRcvCount++;
-			
-			dspMMSEC = rsp.CM.time;
-			shaftMMSEC = rsp.CM.hallTime;
-		}
-		else if (rsp.rw == (dspReqWord|0x50))
-		{
-			q->crcOK = (q->rb.len == (rsp.IM.dataLen*4 + 2 + sizeof(rsp.IM)-sizeof(rsp.IM.data)));
-			q->rsp->dataLen = q->rb.len;
-
-			dspStatus |= 1;
-			dspRcv50++;
-			dspRcvCount++;
-
-			dspMMSEC = rsp.IM.time;
-			shaftMMSEC = rsp.IM.hallTime;
-		}
-		else
-		{
-			q->crcOK = GetCRC16(q->rb.data, q->rb.len) == 0;
-
-			if (q->crcOK && rsp.rw == (dspReqWord|1))
-			{
-				curFireVoltage = rsp.v01.fireVoltage;
-				motoVoltage = rsp.v01.motoVoltage;
-				
-				dspStatus |= 1;
-				dspRcvCount++;
-			};
-		};
+		dspStatus |= 1;
+		dspRcvCount++;
 	}
 	else
 	{
@@ -379,6 +345,8 @@ void CallBackDspReq01(Ptr<REQ> &q)
 		{
 			q->tryCount--;
 			qdsp.Add(q);
+
+			return false;
 		}
 		else
 		{
@@ -387,6 +355,8 @@ void CallBackDspReq01(Ptr<REQ> &q)
 			//q.Free();
 		};
 	};
+
+	return true;
 }
 
 //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -403,8 +373,8 @@ Ptr<REQ> CreateDspReq01(u16 tryCount)
 
 	if (!rq->rsp.Valid()) { rq.Free(); return rq; };
 
-	ReqDsp01 &req = *((ReqDsp01*)rq->reqData);
-	RspDsp01 &rsp = *((RspDsp01*)(rq->rsp->GetDataPtr()));
+	ReqDsp00 &req = *((ReqDsp00*)rq->reqData);
+	RspDsp00 &rsp = *((RspDsp00*)(rq->rsp->GetDataPtr()));
 
 	rq->rsp->dataLen = 0;
 	
@@ -428,35 +398,7 @@ Ptr<REQ> CreateDspReq01(u16 tryCount)
 	q.rb.maxLen = sizeof(rsp);
 	q.rb.recieved = false;
 	
-	req.rw				= dspReqWord|1;
-	req.len				= sizeof(req);
-	req.version			= req.VERSION;
-	req.mode 			= mode;
-	req.ax				= ax;
-	req.ay				= ay;
-	req.az				= az;
-	req.at				= at;
-	req.gain 			= mv.gain;
-	req.st	 			= mv.sampleTime;
-	req.sl 				= mv.sampleLen;
-	req.sd 				= mv.sampleDelay;
-	req.thr				= mv.descriminant;
-	req.descr			= mv.deadTime;
-	req.freq			= mv.freq;
-	req.refgain 		= mv.gainRef;
-	req.refst			= mv.sampleTimeRef;
-	req.refsl 			= mv.sampleLenRef;
-	req.refsd 			= mv.sampleDelayRef;
-	req.refthr			= mv.descriminantRef;
-	req.refdescr		= mv.deadTimeRef;
-	req.refFreq			= mv.refFreq;
-	req.vavesPerRoundCM = mv.cmSPR;
-	req.vavesPerRoundIM = mv.imSPR;
-	req.filtrType		= mv.filtrType;
-	req.packType		= mv.packType;
-	req.fireVoltage		= mv.fireVoltage;
-
-	req.crc	= GetCRC16(&req, sizeof(ReqDsp01)-2);
+	req.rw				= dspReqWord;
 
 	return rq;
 }
@@ -506,7 +448,7 @@ Ptr<UNIBUF> CreateTestDspReq01()
 //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
-void CallBackDspReq05(Ptr<REQ> &q)
+bool CallBackDspReq05(Ptr<REQ> &q)
 {
 	if (!q->crcOK) 
 	{
@@ -514,8 +456,12 @@ void CallBackDspReq05(Ptr<REQ> &q)
 		{
 			q->tryCount--;
 			qdsp.Add(q);
+
+			return false;
 		};
 	};
+
+	return true;
 }
 
 //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -561,7 +507,7 @@ Ptr<REQ> CreateDspReq05(u16 tryCount)
 
 //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
-void CallBackDspReq06(Ptr<REQ> &q)
+static bool CallBackDspReq06(Ptr<REQ> &q)
 {
 	bool retry = false;
 
@@ -582,8 +528,11 @@ void CallBackDspReq06(Ptr<REQ> &q)
 	{
 		q->tryCount--;
 		qdsp.Add(q);
+
+		return false;
 	};
 
+	return true;
 }
 
 //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -717,7 +666,7 @@ Ptr<REQ> CreateDspReq07()
 //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
-static void CallBackMotoReq(Ptr<REQ> &q)
+static bool CallBackMotoReq(Ptr<REQ> &q)
 {
 	if (!q->crcOK) 
 	{
@@ -725,6 +674,8 @@ static void CallBackMotoReq(Ptr<REQ> &q)
 		{
 			q->tryCount--;
 			qmoto.Add(q);
+
+			return false;
 		};
 	}
 	else
@@ -740,6 +691,8 @@ static void CallBackMotoReq(Ptr<REQ> &q)
 			motoRcvCount++;
 		};
 	};
+
+	return true;
 }
 
 //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -786,7 +739,7 @@ static Ptr<REQ> CreateMotoReq()
 
 //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
-void CallBackBootMotoReq01(Ptr<REQ> &q)
+static bool CallBackBootMotoReq01(Ptr<REQ> &q)
 {
 	if (!q->crcOK) 
 	{
@@ -794,13 +747,17 @@ void CallBackBootMotoReq01(Ptr<REQ> &q)
 		{
 			q->tryCount--;
 			qmoto.Add(q);
+
+			return false;
 		};
 	};
+
+	return true;
 }
 
 //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
-Ptr<REQ> CreateBootMotoReq01(u16 flashLen, u16 tryCount)
+static Ptr<REQ> CreateBootMotoReq01(u16 flashLen, u16 tryCount)
 {
 	Ptr<REQ> rq;
 	
@@ -844,7 +801,7 @@ Ptr<REQ> CreateBootMotoReq01(u16 flashLen, u16 tryCount)
 
 //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
-void CallBackBootMotoReq02(Ptr<REQ> &q)
+static bool CallBackBootMotoReq02(Ptr<REQ> &q)
 {
 	if (!q->crcOK) 
 	{
@@ -852,13 +809,17 @@ void CallBackBootMotoReq02(Ptr<REQ> &q)
 		{
 			q->tryCount--;
 			qmoto.Add(q);
+
+			return false;
 		};
 	};
+
+	return true;
 }
 
 //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
-Ptr<REQ> CreateBootMotoReq02(u16 stAdr, u16 count, const u32* data, u16 tryCount)
+static Ptr<REQ> CreateBootMotoReq02(u16 stAdr, u16 count, const u32* data, u16 tryCount)
 {
 	Ptr<REQ> rq;
 	
@@ -928,7 +889,7 @@ Ptr<REQ> CreateBootMotoReq02(u16 stAdr, u16 count, const u32* data, u16 tryCount
 
 //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
-Ptr<REQ> CreateBootMotoReq03()
+static Ptr<REQ> CreateBootMotoReq03()
 {
 	Ptr<REQ> rq;
 	
@@ -2463,7 +2424,7 @@ static void FlashDSP()
 
 	while (!tm.Check(100)) HW::WDT->Update();
 
-	while (!req.Valid()) req = CreateDspReq05(2);
+	while (!req.Valid()) req = CreateDspReq05(500);
 
 	qdsp.Add(req); while(!req->ready) { qdsp.Update(); HW::WDT->Update(); };
 
@@ -2535,23 +2496,11 @@ static void FlashDSP()
 				p += len;
 				adr += len;
 			};
-
-			req = CreateDspReq07();
-
-			qdsp.Add(req); while(!req->ready) { qdsp.Update();	};
-
-			//DisableDSP();
-			//
-			//tm.Reset();
-
-			//while (!tm.Check(1)) HW::WDT->Update();
-
-			//EnableDSP();
-			
-			//tm.Reset();
-
-			//while (!tm.Check(100)) HW::WDT->Update();
 		};
+
+		req = CreateDspReq07();
+
+		qdsp.Add(req); while(!req->ready) { qdsp.Update();	};
 	};
 }
 
@@ -2941,6 +2890,7 @@ static void UpdateParams()
 		CALL( UpdateI2C();				);
 		CALL( SaveVars();				);
 		CALL( UpdateMoto();				);
+		CALL( UpdateDSP();				);
 	};
 
 	i = (i > (__LINE__-S-3)) ? 0 : i;
@@ -3018,7 +2968,7 @@ int main()
 
 //	static bool c = true;
 
-	//static u32 buf[100];
+	static u32 buf[100] = {0};
 
 	//volatile byte * const FLD = (byte*)0x60000000;	
 	
@@ -3053,15 +3003,35 @@ int main()
 
 #ifndef WIN32
 
-	commoto.Connect(ComPort::ASYNC, 0, 1562500, 0, 1);
-	comdsp.Connect(ComPort::ASYNC, 2, 6250000, 2, 1);
-	//commem.Connect(ComPort::ASYNC, 1, 6250000, 0, 1);
+	commoto.Connect(ComPort::ASYNC, 1562500, 0, 1);
+	comdsp.Connect(ComPort::ASYNC, 6250000, 2, 1);
 
 	//__breakpoint(0);
+
+	ComPort::WriteBuffer wb;
+	CTM32 ctm;
+
+	wb.data = buf;
+	wb.len = 1;
+
+	for (u32 i = 0; i < 10; i++)
+	{
+		comdsp.Write(&wb);
+		while(comdsp.Update());
+		ctm.Reset(); 
+		while(!ctm.Check(US2COM(20)));
+		wb.len += 1;
+	};
+
+	__breakpoint(0);
 
 	FlashMoto();
 
 	FlashDSP();
+
+	comdsp.Disconnect();
+
+	comdsp.Connect(ComPort::ASYNC, 1000000, 2, 1);
 
 #endif
 

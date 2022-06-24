@@ -70,7 +70,7 @@ static volatile bool busyWriteThread = false;
 
 #elif defined(CPU_SAME53)
 
-static S_I2C i2c(PIO_I2C, SCL, I2C_PMUX_SCL, PIO_I2C, SDA, I2C_PMUX_SDA, I2C_GEN_SRC, I2C_GEN_CLK, &I2C_DMACH );
+static S_I2C i2c(I2C_SERCOM_NUM, PIO_I2C, SCL, I2C_PMUX_SCL, PIO_I2C, SDA, I2C_PMUX_SDA, I2C_GEN_SRC, I2C_GEN_CLK, &I2C_DMACH );
 
 #elif defined(CPU_XMC48)
 
@@ -179,7 +179,7 @@ void I2C_Init()
 
 //	SEGGER_RTT_WriteString(0, RTT_CTRL_TEXT_BRIGHT_CYAN "I2C Init ... ");
 
-	i2c.Connect(I2C_SERCOM_NUM, I2C_BAUDRATE);
+	i2c.Connect(I2C_BAUDRATE);
 
 #else
 

@@ -70,12 +70,24 @@
 	#define GEN_25M_CLK			25000000
 	#define GEN_1M_CLK			1000000
 
+	// ++++++++++++++	SERCOM	++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+	#define SPI_SERCOM_NUM		0
+	#define UART2_DSP			1
+//	#define SERCOM_2			2
+	#define I2C_SERCOM_NUM		3
+	#define DSP_SERCOM_NUM		4
+	//#define SERCOM_5			5
+	//#define SERCOM_6			6
+	#define UART0_LPC			7
+
+
 	// ++++++++++++++	DMA	0...31	++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 	#define	NAND_DMA			DMA_CH0
-	#define	COM1_DMA			DMA_CH1
-	#define	COM2_DMA			DMA_CH2
-	#define	COM3_DMA			DMA_CH3
+	#define	UART0_DMA			DMA_CH1
+	#define	UART2_DMA			DMA_CH2
+	//#define	COM3_DMA			DMA_CH3
 	#define	SPI_DMACH_TX		DMA_CH4
 	#define	SPI_DMACH_RX		DMA_CH5
 	#define	NAND_MEMCOPY_DMA	DMA_CH6
@@ -175,7 +187,6 @@
 
 	// ++++++++++++++	I2C	++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
-	#define I2C_SERCOM_NUM		3
 //	#define I2C					CONCAT2(HW::I2C,I2C_SERCOM_NUM)
 	#define PIO_I2C				HW::PIOA 
 	#define PIN_SDA				22 
@@ -193,7 +204,6 @@
 
 	// ++++++++++++++	SPI	++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
-	#define SPI_SERCOM_NUM		0
 	#define PIO_SPCK			HW::PIOA
 	#define PIO_MOSI			HW::PIOA
 	#define PIO_MISO			HW::PIOA
@@ -229,7 +239,6 @@
 
 	// ++++++++++++++	DSP SPI	++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
-	#define DSP_SERCOM_NUM		4
 	#define PIO_DSP_SPCK		HW::PIOB
 	#define PIO_DSP_MOSI		HW::PIOB
 	#define PIO_DSP_MISO		HW::PIOB
@@ -399,35 +408,50 @@
 
 	// ++++++++++++++	DSP RESET	++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
-	#define PIN_DSP_RESET		2
+	#define PIN_DSP_RESET		1
 	#define PIO_DSP_RESET		HW::PIOC
 	#define DSP_RESET			(1<<PIN_DSP_RESET)
 
 	// ++++++++++++++	DSP BOOT MODE	++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
-	#define PIN_DSP_BMODE1		1
-	#define PIO_DSP_BMODE1		HW::PIOC
-	#define DSP_BMODE1			(1<<PIN_DSP_BMODE1)
+	//#define PIN_DSP_BMODE1		1
+	//#define PIO_DSP_BMODE1		HW::PIOC
+	//#define DSP_BMODE1			(1<<PIN_DSP_BMODE1)
 
 	// ++++++++++++++	USART	++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
-	#define PIO_USART0		HW::PIOB 
-	#define PIO_USART1		HW::PIOB 
-	#define PIO_USART2		HW::PIOC 
+	#define PIO_UTXD0			HW::PIOB 
+	#define PIO_URXD0			HW::PIOB 
+	#define PIO_UTXD2			HW::PIOC 
+	#define PIO_URXD2			HW::PIOC 
 
-	#define PIN_UTXD0		21 
-	#define PIN_URXD0		20 
-	#define PIN_UTXD1		16
-	#define PIN_URXD1		17
-	#define PIN_UTXD2		7 
-	#define PIN_URXD2		6 
+	#define PMUX_UTXD0			PORT_PMUX_D
+	#define PMUX_URXD0			PORT_PMUX_D 
+	#define PMUX_UTXD2			PORT_PMUX_C 
+	#define PMUX_URXD2			PORT_PMUX_C 
 
-	#define UTXD0			(1<<PIN_UTXD0) 
-	#define URXD0			(1<<PIN_URXD0) 
-	#define UTXD1			(1<<PIN_UTXD1) 
-	#define URXD1			(1<<PIN_URXD1) 
-	#define UTXD2			(1<<PIN_UTXD2) 
-	#define URXD2			(1<<PIN_URXD2) 
+	#define UART0_TXPO			USART_TXPO_0 
+	#define UART0_RXPO			USART_RXPO_1 
+
+	#define UART2_TXPO			USART_TXPO_0 
+	#define UART2_RXPO			USART_RXPO_1 
+
+	#define PIN_UTXD0			21 
+	#define PIN_URXD0			20 
+	#define PIN_UTXD2			27 
+	#define PIN_URXD2			28
+
+	#define UTXD0				(1<<PIN_UTXD0) 
+	#define URXD0				(1<<PIN_URXD0) 
+	#define UTXD2				(1<<PIN_UTXD2) 
+	#define URXD2				(1<<PIN_URXD2) 
+
+	#define UART0_GEN_SRC		GEN_MCK
+	#define UART0_GEN_CLK		GEN_MCK_CLK
+
+	#define UART2_GEN_SRC		GEN_MCK
+	#define UART2_GEN_CLK		GEN_MCK_CLK
+
 
 	// ++++++++++++++	CLOCK	++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 

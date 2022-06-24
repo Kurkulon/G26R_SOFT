@@ -938,7 +938,7 @@ int main()
 
 	ResetPHY();
 
-	Init_time();
+	Init_time(MCK);
 	//RTT_Init();
 	WDT_Init();
 

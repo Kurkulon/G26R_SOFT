@@ -110,6 +110,22 @@ __packed struct ReqDsp01_old	// чтение вектора
 
 //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
+__packed struct ReqDsp00	// чтение вектора
+{
+	u16 	rw;
+};
+
+//+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+__packed struct RspDsp00	// чтение вектора
+{
+	u16 	rw;
+	u16		numDevice;
+	u16		verDevice;
+};
+
+//+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
 __packed struct ReqDsp01	// чтение вектора
 {
 	enum { VERSION = 1 };
@@ -331,7 +347,7 @@ struct REQ : public PtrItem<REQ>
 	bool	checkCRC;
 	bool	updateCRC;
 
-	typedef void tRsp(Ptr<REQ> &q);
+	typedef bool tRsp(Ptr<REQ> &q);
 
 	u16		tryCount;
 	

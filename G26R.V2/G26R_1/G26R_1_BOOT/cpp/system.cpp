@@ -485,7 +485,7 @@ extern "C" void SystemInit()
 		HW::PIOB->DIRSET = (1<<18)|(1<<20)|(1<<21);
 		//HW::PIOB->SetWRCONFIG((1<<17), PORT_PMUX(11)|PORT_WRPINCFG|PORT_PMUXEN|PORT_WRPMUX;
 
-		HW::PIOC->DIRSET = (1<<15)|(1<<28)|(1<<27)|(1<<26)|(1<<25)|(1<<0);
+		HW::PIOC->DIRSET = (1<<15)|(1<<28)|(1<<27)|(1<<26)|(1<<25);
 		HW::PIOC->SET((1<<15)/*|(1<<0)*/);
 
 		HW::PIOA->BSET(25);

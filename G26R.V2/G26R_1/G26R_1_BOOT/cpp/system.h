@@ -3,6 +3,7 @@
 
 	#ifdef CPU_SAME53
 
+		#define MCK				200000000
 
 	#elif defined(CPU_XMC48)
 
