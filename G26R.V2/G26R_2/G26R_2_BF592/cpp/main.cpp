@@ -3,6 +3,11 @@
 #include "CRC16.h"
 //#include "at25df021.h"
 
+//+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+const byte build_date[] = "\n" "G26R1BF592" "\n" __DATE__ "\n" __TIME__ "\n";
+
+//+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 static ComPort com;
 //static ComPort::WriteBuffer wb;
@@ -594,7 +599,7 @@ int main( void )
 
 	//LoadParams();
 
-	com.Connect(1000000, 2);
+	com.Connect(6250000, 2);
 
 //	InitNetAdress();
 

@@ -2420,13 +2420,13 @@ static void FlashDSP()
 
 	EnableDSP();
 
-	tm.Reset();
-
-	while (!tm.Check(100)) HW::WDT->Update();
-
-	while (!req.Valid()) req = CreateDspReq05(500);
+	while (!req.Valid()) req = CreateDspReq05(50);
 
 	qdsp.Add(req); while(!req->ready) { qdsp.Update(); HW::WDT->Update(); };
+
+	//tm.Reset();
+
+	//while (!tm.Check(10)) HW::WDT->Update();
 
 	if (req->crcOK)
 	{
@@ -2501,6 +2501,10 @@ static void FlashDSP()
 		req = CreateDspReq07();
 
 		qdsp.Add(req); while(!req->ready) { qdsp.Update();	};
+
+		tm.Reset();
+
+		while (!tm.Check(10)) HW::WDT->Update();
 	};
 }
 
@@ -2968,7 +2972,7 @@ int main()
 
 //	static bool c = true;
 
-	static u32 buf[100] = {0};
+	//static byte buf[100] = {0x07, 0xA9, 0xC3, 0xFE};
 
 	//volatile byte * const FLD = (byte*)0x60000000;	
 	
@@ -3008,30 +3012,30 @@ int main()
 
 	//__breakpoint(0);
 
-	ComPort::WriteBuffer wb;
-	CTM32 ctm;
+	//ComPort::WriteBuffer wb;
+	//CTM32 ctm;
 
-	wb.data = buf;
-	wb.len = 1;
+	//wb.data = buf;
+	//wb.len = 1;
 
-	for (u32 i = 0; i < 10; i++)
-	{
-		comdsp.Write(&wb);
-		while(comdsp.Update());
-		ctm.Reset(); 
-		while(!ctm.Check(US2COM(20)));
-		wb.len += 1;
-	};
+	//for (u32 i = 0; i < 10; i++)
+	//{
+	//	comdsp.Write(&wb);
+	//	while(comdsp.Update());
+	//	ctm.Reset(); 
+	//	while(!ctm.Check(US2COM(20)));
+	//	wb.len += 1;
+	//};
 
-	__breakpoint(0);
+	//__breakpoint(0);
 
 	FlashMoto();
 
 	FlashDSP();
 
-	comdsp.Disconnect();
+//	comdsp.Disconnect();
 
-	comdsp.Connect(ComPort::ASYNC, 1000000, 2, 1);
+//	comdsp.Connect(ComPort::ASYNC, 1000000, 2, 1);
 
 #endif
 
