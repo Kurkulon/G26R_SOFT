@@ -72,108 +72,45 @@ struct RspBootMoto
 
 //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
-__packed struct ReqDsp01_old	// чтение вектора
+struct ReqDsp01	// чтение вектора
 {
 	u16 	rw;
-	u16 	mode; 
-	u32 	mmsecTime; 
-	u32		hallTime; 
-	u16		motoCount; 
-	u16		headCount;
-	u16		ax; 
-	u16		ay; 
-	u16		az; 
-	u16		at;
-	u16		sensType; 
-	u16		angle;
-	u16 	gain; 
-	u16 	st;	 
-	u16 	sl; 
-	u16 	sd; 
-	u16		thr;
-	u16		descr;
-	u16		freq;
-	u16 	refgain; 
-	u16 	refst;	 
-	u16 	refsl; 
-	u16 	refsd; 
-	u16		refthr;
-	u16		refdescr;
-	u16		refFreq;
-	u16		vavesPerRoundCM;
-	u16		vavesPerRoundIM;
-	u16		filtrType;
-	u16		packType;
+
+	u16		gain; 
+	u16		sampleTime; 
+	u16		sampleLen; 
+	u16		sampleDelay; 
+	u16		flt;
+	u16		firePeriod; //ms
 
 	u16 	crc;  
 };
 
 //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
-__packed struct ReqDsp00	// чтение вектора
+struct RspDsp01	// чтение вектора
 {
-	u16 	rw;
-};
+	u16		rw; 
 
-//+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-
-__packed struct RspDsp00	// чтение вектора
-{
-	u16 	rw;
-	u16		numDevice;
-	u16		verDevice;
-};
-
-//+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-
-__packed struct ReqDsp01	// чтение вектора
-{
-	enum { VERSION = 1 };
-
-	u16 	rw;
-	u16		len;				// ƒлина структуры
-	u16		version;			// ¬ерси€ структуры
-
-	u16 	mode; 
-	u16		ax; 
-	u16		ay; 
-	u16		az; 
-	u16		at;
-	u16 	gain; 
-	u16 	st;	 
-	u16 	sl; 
-	u16 	sd; 
-	u16		thr;
-	u16		descr;
-	u16		freq;
-	u16 	refgain; 
-	u16 	refst;	 
-	u16 	refsl; 
-	u16 	refsd; 
-	u16		refthr;
-	u16		refdescr;
-	u16		refFreq;
-	u16		vavesPerRoundCM;
-	u16		vavesPerRoundIM;
-	u16		filtrType;
-	u16		packType;
-	u16		fireVoltage;		// Ќапр€жение излучател€ (¬)
-
+	u16		counter;		
 	u16 	crc;  
 };
 
 //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
-__packed struct RspDsp01	// чтение вектора
-{
-	u16 rw; 
-
-	__packed union
-	{
-		__packed struct { u32 time; u32 hallTime; u16 motoCount; u16 headCount; u16 ax; u16 ay; u16 az; u16 at; u16 sensType; u16 angle; u16 maxAmp; u16 fi_amp; u16 fi_time; u16 gain; u16 st; u16 sl; u16 sd; u16 pakType; u16 pakLen; u16 data[1024]; } CM;
-		__packed struct { u32 time; u32 hallTime; u16 ax; u16 ay; u16 az; u16 at; u16 gain; u16 refAmp;u16 refTime; u16 dataLen; u16 data[1024];} IM;
-		__packed struct { u16 len;	u16	version; u16 fireVoltage; u16 motoVoltage; u16 	crc;  } v01;
-	};
+struct RspDsp30 
+{ 
+	struct Hdr 
+	{ 
+		u16 rw; 
+		u16 fnum; 
+		u16 gain; 
+		u16 st; 
+		u16 sl; 
+		u16 sd; 
+		u16 flt; 
+	} h; 
+	u16 data[1024+32]; 
 };
 
 //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -342,14 +279,18 @@ union ReqUnion
 
 struct REQ : public PtrItem<REQ>
 {
-	bool	ready;
-	bool	crcOK;
-	bool	checkCRC;
-	bool	updateCRC;
+	enum CRC_TYPE { CRC16 = 0, CRC16_CCIT, CRC16_NOT_VALID };
+
+	bool		ready;
+	bool		crcOK;
+	bool		checkCRC;
+	bool		updateCRC;
 
 	typedef bool tRsp(Ptr<REQ> &q);
 
-	u16		tryCount;
+	u16			tryCount;
+
+	CRC_TYPE	crcType;
 	
 	//REQ *next;
 

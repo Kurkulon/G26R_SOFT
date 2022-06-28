@@ -16,13 +16,13 @@
 #define CCLK (VCO_VALUE >> ((PLLDIV_VALUE >> 4) & 3))
 //#define MCK CCLK
 
-#define MS2CLK(x) ((u32)(x*1.0*SCLK/1e3+0.5))
-#define US2CLK(x) ((u32)(x*1.0*SCLK/1e6+0.5))
-#define NS2CLK(x) ((u32)(x*1.0*SCLK/1e9+0.5))
+#define MS2CLK(x) ((u32)((x)*(SCLK/1e3)))
+#define US2CLK(x) ((u32)(((x)*(SCLK/1e3)+500)/1000))
+#define NS2CLK(x) ((u32)(((x)*(SCLK/1e6)+500)/1000))
 
-#define MS2CCLK(x) ((u32)(x*1.0*CCLK/1e3+0.5))
-#define US2CCLK(x) ((u32)(x*1.0*CCLK/1e6+0.5))
-#define NS2CCLK(x) ((u32)(x*1.0*CCLK/1e9+0.5))
+#define MS2CCLK(x) ((u32)((x)*(CCLK/1e3)))
+#define US2CCLK(x) ((u32)(((x)*(CCLK/1e3)+500)/1000))
+#define NS2CCLK(x) ((u32)(((x)*(CCLK/1e6)+500)/1000))
 
 #include "bf592.h"
 

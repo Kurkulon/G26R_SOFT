@@ -43,8 +43,8 @@ static void Init_PLL()
 
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
-bool defPPI_Ready = false;
-static bool *ppi_Ready = &defPPI_Ready;
+volatile bool defPPI_Ready = false;
+static volatile bool *ppi_Ready = &defPPI_Ready;
 
 EX_INTERRUPT_HANDLER(PPI_ISR)
 {
@@ -101,7 +101,7 @@ static void InitPPI()
 
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
-void ReadPPI(void *dst, u16 len, u16 clkdiv, u32 delay, bool *ready)
+void ReadPPI(void *dst, u16 len, u16 clkdiv, u32 delay, volatile bool *ready)
 {
 	ppi_Ready = ready;
 

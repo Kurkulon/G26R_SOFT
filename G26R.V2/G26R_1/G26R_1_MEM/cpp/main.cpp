@@ -52,24 +52,11 @@ __packed struct MainVars // NonVolatileVars
 	u16 sampleTime;
 	u16 sampleLen;
 	u16 sampleDelay;
-	u16 deadTime;
-	u16 descriminant;
+	u16 filtrType;
+	u16 firePeriod;
 	u16 freq;
 
-	u16 gainRef;
-	u16 sampleTimeRef;
-	u16 sampleLenRef;
-	u16 sampleDelayRef;
-	u16 deadTimeRef;
-	u16 descriminantRef;
-	u16 refFreq;
-	u16 filtrType;
-	u16 packType;
-	u16 cmSPR;
-	u16 imSPR;
 	u16 fireVoltage;
-	u16 motoLimCur;
-	u16 motoMaxCur;
 };
 
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -112,11 +99,9 @@ static RequestQuery qdsp(&comdsp);
 
 //static R01 r02[8];
 
-static Ptr<UNIBUF> manVec40[2];
+static Ptr<UNIBUF> manVec30[13];
 
-static Ptr<UNIBUF> curManVec40;
-static Ptr<UNIBUF> manVec50;
-static Ptr<UNIBUF> curManVec50;
+static Ptr<UNIBUF> curManVec30;
 
 //static RspMan60 rspMan60;
 
@@ -224,10 +209,10 @@ i16 temp = 0;
 static byte svCount = 0;
 
 
-struct AmpTimeMinMax { bool valid; u16 ampMax, ampMin, timeMax, timeMin; };
+//struct AmpTimeMinMax { bool valid; u16 ampMax, ampMin, timeMax, timeMin; };
 
-static AmpTimeMinMax sensMinMax[2] = { {0, 0, ~0, 0, ~0}, {0, 0, ~0, 0, ~0} };
-static AmpTimeMinMax sensMinMaxTemp[2] = { {0, 0, ~0, 0, ~0}, {0, 0, ~0, 0, ~0} };
+//static AmpTimeMinMax sensMinMax[2] = { {0, 0, ~0, 0, ~0}, {0, 0, ~0, 0, ~0} };
+//static AmpTimeMinMax sensMinMaxTemp[2] = { {0, 0, ~0, 0, ~0}, {0, 0, ~0, 0, ~0} };
 
 static u32 testDspReqCount = 0;
 
@@ -324,14 +309,22 @@ static void SetModeIM()
 
 bool CallBackDspReq01(Ptr<REQ> &q)
 {
-	RspDsp00 &rsp = *((RspDsp00*)q->rb.data);
+	RspDsp01 &rsp = *((RspDsp01*)q->rb.data);
 	 
-	if (q->rb.recieved && q->rb.len == sizeof(rsp) && rsp.rw == dspReqWord)
+	if (q->rb.recieved && q->crcOK)
 	{
-		q->crcOK = true;
+		if (rsp.rw == (dspReqWord|0x30))
+		{
+			q->rsp->dataLen = q->rb.len;
 
-		dspStatus |= 1;
-		dspRcvCount++;
+			dspRcvCount++;
+		}
+		else if (rsp.rw == (dspReqWord|1))
+		{
+			q->rsp->dataLen = 0;
+
+			dspRcvCount++;
+		};
 	}
 	else
 	{
@@ -373,8 +366,8 @@ Ptr<REQ> CreateDspReq01(u16 tryCount)
 
 	if (!rq->rsp.Valid()) { rq.Free(); return rq; };
 
-	ReqDsp00 &req = *((ReqDsp00*)rq->reqData);
-	RspDsp00 &rsp = *((RspDsp00*)(rq->rsp->GetDataPtr()));
+	ReqDsp01 &req = *((ReqDsp01*)rq->reqData);
+	RspDsp30 &rsp = *((RspDsp30*)(rq->rsp->GetDataPtr()));
 
 	rq->rsp->dataLen = 0;
 	
@@ -388,8 +381,9 @@ Ptr<REQ> CreateDspReq01(u16 tryCount)
 	q.ready = false;
 	q.tryCount = tryCount;
 	//q.ptr = &r;
-	q.checkCRC = false;
-	q.updateCRC = false;
+	q.checkCRC = true;
+	q.updateCRC = true;
+	q.crcType = q.CRC16_CCIT;
 	
 	q.wb.data = &req;
 	q.wb.len = sizeof(req);
@@ -398,7 +392,13 @@ Ptr<REQ> CreateDspReq01(u16 tryCount)
 	q.rb.maxLen = sizeof(rsp);
 	q.rb.recieved = false;
 	
-	req.rw				= dspReqWord;
+	req.rw = dspReqWord|1;
+	req.gain = mv.gain;
+	req.sampleTime = mv.sampleTime; 
+	req.sampleLen = mv.sampleLen; 
+	req.sampleDelay = mv.sampleDelay; 
+	req.flt = mv.filtrType;
+	req.firePeriod = mv.firePeriod; //ms
 
 	return rq;
 }
@@ -415,30 +415,30 @@ Ptr<UNIBUF> CreateTestDspReq01()
 
 	RspDsp01 &rsp = *((RspDsp01*)(rq->GetDataPtr()));
 
-	rsp.rw = manReqWord|0x40;
-	rsp.CM.time += 1;
-	rsp.CM.hallTime += 1;
-	rsp.CM.motoCount += 1;
-	rsp.CM.headCount += 1;
-	rsp.CM.ax += 1;
-	rsp.CM.ay += 1;
-	rsp.CM.az += 1;
-	rsp.CM.at += 1;
-	rsp.CM.sensType = 0;
-	rsp.CM.angle += 1;
-	rsp.CM.maxAmp += 1;
-	rsp.CM.fi_amp += 1;
-	rsp.CM.fi_time += 1;
-	rsp.CM.gain += 1;
-	rsp.CM.st = 1;
-	rsp.CM.sl = 4;
-	rsp.CM.sd = 0;
-	rsp.CM.pakType = 0;
-	rsp.CM.pakLen = 0;
-	rsp.CM.data[0] += 1;
-	rsp.CM.data[1] += 1;
-	rsp.CM.data[2] += 1;
-	rsp.CM.data[3] += 1;
+	//rsp.rw = manReqWord|0x40;
+	//rsp.CM.time += 1;
+	//rsp.CM.hallTime += 1;
+	//rsp.CM.motoCount += 1;
+	//rsp.CM.headCount += 1;
+	//rsp.CM.ax += 1;
+	//rsp.CM.ay += 1;
+	//rsp.CM.az += 1;
+	//rsp.CM.at += 1;
+	//rsp.CM.sensType = 0;
+	//rsp.CM.angle += 1;
+	//rsp.CM.maxAmp += 1;
+	//rsp.CM.fi_amp += 1;
+	//rsp.CM.fi_time += 1;
+	//rsp.CM.gain += 1;
+	//rsp.CM.st = 1;
+	//rsp.CM.sl = 4;
+	//rsp.CM.sd = 0;
+	//rsp.CM.pakType = 0;
+	//rsp.CM.pakLen = 0;
+	//rsp.CM.data[0] += 1;
+	//rsp.CM.data[1] += 1;
+	//rsp.CM.data[2] += 1;
+	//rsp.CM.data[3] += 1;
 
 	rq->dataLen = (22+1500)*2;
 	
@@ -492,6 +492,7 @@ Ptr<REQ> CreateDspReq05(u16 tryCount)
 	q.tryCount = tryCount;
 	q.checkCRC = true;
 	q.updateCRC = false;
+	q.crcType = q.CRC16;
 	
 	q.wb.data = &req;
 	q.wb.len = sizeof(req);
@@ -563,6 +564,7 @@ Ptr<REQ> CreateDspReq06(u16 stAdr, u16 count, void* data, u16 count2, void* data
 	q.tryCount = tryCount;
 	q.checkCRC = true;
 	q.updateCRC = false;
+	q.crcType = q.CRC16;
 	
 	q.rb.data = &rsp;
 	q.rb.maxLen = sizeof(rsp);
@@ -645,6 +647,7 @@ Ptr<REQ> CreateDspReq07()
 	q.tryCount = 0;
 	q.checkCRC = false;
 	q.updateCRC = false;
+	q.crcType = q.CRC16;
 	
 	q.wb.data = &req;
 	q.wb.len = sizeof(req);
@@ -721,18 +724,18 @@ static Ptr<REQ> CreateMotoReq()
 	q.postTimeOut = US2COM(100);
 	q.ready = false;
 	q.checkCRC = true;
-	q.updateCRC = false;
+	q.updateCRC = true;
+	q.crcType = q.CRC16;
 	q.tryCount = 1;
 	
 	q.wb.data = &req;
-	q.wb.len = sizeof(req);
+	q.wb.len = sizeof(req) - sizeof(req.crc);
 
 	q.rb.data = &rsp;
 	q.rb.maxLen = sizeof(rsp);
 	
 	req.rw = 0x101;
-	req.reqHV = 0;
-	req.crc	= GetCRC16(&req, sizeof(req)-2);
+	req.reqHV = mv.fireVoltage;
 
 	return &q;
 }
@@ -783,6 +786,7 @@ static Ptr<REQ> CreateBootMotoReq01(u16 flashLen, u16 tryCount)
 	q.tryCount = tryCount;
 	q.checkCRC = true;
 	q.updateCRC = false;
+	q.crcType = q.CRC16;
 	
 	q.wb.data = &req;
 	q.wb.len = sizeof(req.F01) + sizeof(req.func);
@@ -845,6 +849,7 @@ static Ptr<REQ> CreateBootMotoReq02(u16 stAdr, u16 count, const u32* data, u16 t
 	q.tryCount = tryCount;
 	q.checkCRC = true;
 	q.updateCRC = false;
+	q.crcType = q.CRC16;
 	
 	q.rb.data = &rsp;
 	q.rb.maxLen = sizeof(rsp);
@@ -915,6 +920,7 @@ static Ptr<REQ> CreateBootMotoReq03()
 	q.tryCount = 1;
 	q.checkCRC = true;
 	q.updateCRC = false;
+	q.crcType = q.CRC16;
 	
 	q.rb.data = &rsp;
 	q.rb.maxLen = sizeof(rsp);
@@ -993,23 +999,9 @@ static u32 InitRspMan_10(__packed u16 *data)
 	*(data++)	= mv.sampleTime;						//	3. Шаг оцифровки
 	*(data++)	= mv.sampleLen;							//	4. Длина оцифровки
 	*(data++)	= mv.sampleDelay; 						//	5. Задержка оцифровки
-	*(data++)	= mv.deadTime;							//	6. Мертвая зона датчика
-	*(data++)	= mv.descriminant;						//	7. Уровень дискриминации датчика
 	*(data++)	= mv.freq;								//	8. Частота излучателя(кГц)
-	*(data++)	= mv.gainRef;							//	9. КУ(опорный датчик)
-	*(data++)	= mv.sampleTimeRef;						//	10. Шаг оцифровки
-	*(data++)	= mv.sampleLenRef;						//	11. Длина оцифровки
-	*(data++)	= mv.sampleDelayRef; 					//	12. Задержка оцифровки
-	*(data++)	= mv.deadTimeRef;						//	13. Мертвая зона датчика
-	*(data++)	= mv.descriminantRef;					//	14. Уровень дискриминации датчика
-	*(data++)	= mv.refFreq;							//	15. Частота излучателя(кГц)
 	*(data++)	= mv.filtrType;							//	16. Фильтр
-	*(data++)	= mv.packType;							//	17. Упаковка
-	*(data++)	= mv.cmSPR;								//	18. Количество волновых картин на оборот головки в режиме цементомера
-	*(data++)	= mv.imSPR;								//	19. Количество точек на оборот головки в режиме имиджера
 	*(data++)	= mv.fireVoltage;						//	20. Напряжение излучателя(В)
-	*(data++)	= mv.motoLimCur;						//	21. Ограничение тока двигателя (мА)
-	*(data++)	= mv.motoMaxCur;						//	22. Аварийный ток двигателя (мА)
 
 	return data - start;
 }
@@ -1062,14 +1054,14 @@ static u32 InitRspMan_20(__packed u16 *data)
 	*(data++)  	= az;							//	13. AZ(уе)
 	*(data++)  	= at;							//	14. AT(short 0.01 гр)
 	*(data++)	= temp;							//	15. Температура в приборе(short)(0.1гр)
-	*(data++)	= sensMinMax[0].ampMax;			//	16. Амплитуда измерительного датчика максимум по всей волне(у.е)
-	*(data++)	= sensMinMax[0].ampMin;			//	17. Амплитуда измерительного датчика минимум по всей волне(у.е)
-	*(data++)	= sensMinMax[0].timeMax;		//	18. Время измерительного датчика максимум по первому вступлению(0.05 мкс)
-	*(data++)	= sensMinMax[0].timeMin;		//	19. Время измерительного датчика минимум по первому вступлению(0.05 мкс)
-	*(data++)	= sensMinMax[1].ampMax;			//	20. Амплитуда опорного датчика максимум по всей волне(у.е)
-	*(data++)	= sensMinMax[1].ampMin;			//	21. Амплитуда опорного датчика минимум по всей волне(у.е)
-	*(data++)	= sensMinMax[1].timeMax;		//	22. Время опорного датчика максимум по первому вступлению(0.05 мкс)
-	*(data++)	= sensMinMax[1].timeMin;		//	23. Время опорного датчика минимум по первому вступлению(0.05 мкс)
+	//*(data++)	= sensMinMax[0].ampMax;			//	16. Амплитуда измерительного датчика максимум по всей волне(у.е)
+	//*(data++)	= sensMinMax[0].ampMin;			//	17. Амплитуда измерительного датчика минимум по всей волне(у.е)
+	//*(data++)	= sensMinMax[0].timeMax;		//	18. Время измерительного датчика максимум по первому вступлению(0.05 мкс)
+	//*(data++)	= sensMinMax[0].timeMin;		//	19. Время измерительного датчика минимум по первому вступлению(0.05 мкс)
+	//*(data++)	= sensMinMax[1].ampMax;			//	20. Амплитуда опорного датчика максимум по всей волне(у.е)
+	//*(data++)	= sensMinMax[1].ampMin;			//	21. Амплитуда опорного датчика минимум по всей волне(у.е)
+	//*(data++)	= sensMinMax[1].timeMax;		//	22. Время опорного датчика максимум по первому вступлению(0.05 мкс)
+	//*(data++)	= sensMinMax[1].timeMin;		//	23. Время опорного датчика минимум по первому вступлению(0.05 мкс)
 	*(data++)	= 0;							//	24. Состояние датчика Холла(0, 1)
 	*(data++)	= curFireVoltage;				//	25. Напряжение излучателя(В)
 	*(data++)	= motoVoltage;					//	26. Напряжение двигателя(В)
@@ -1097,22 +1089,22 @@ static bool RequestMan_20(u16 *data, u16 len, MTB* mtb)
 {
 	if (data == 0 || len == 0 || len > 2 || mtb == 0) return false;
 
-	if (sensMinMaxTemp[0].valid) { sensMinMax[0] = sensMinMaxTemp[0]; };
-	if (sensMinMaxTemp[1].valid) { sensMinMax[1] = sensMinMaxTemp[1]; };
+	//if (sensMinMaxTemp[0].valid) { sensMinMax[0] = sensMinMaxTemp[0]; };
+	//if (sensMinMaxTemp[1].valid) { sensMinMax[1] = sensMinMaxTemp[1]; };
 
 	len = InitRspMan_20(manTrmData);
 
-	sensMinMaxTemp[0].ampMax = 0;
-	sensMinMaxTemp[0].ampMin = ~0;
-	sensMinMaxTemp[0].timeMax = 0;
-	sensMinMaxTemp[0].timeMin = ~0;
-	sensMinMaxTemp[0].valid = false;
+	//sensMinMaxTemp[0].ampMax = 0;
+	//sensMinMaxTemp[0].ampMin = ~0;
+	//sensMinMaxTemp[0].timeMax = 0;
+	//sensMinMaxTemp[0].timeMin = ~0;
+	//sensMinMaxTemp[0].valid = false;
 
-	sensMinMaxTemp[1].ampMax = 0;
-	sensMinMaxTemp[1].ampMin = ~0;
-	sensMinMaxTemp[1].timeMax = 0;
-	sensMinMaxTemp[1].timeMin = ~0;
-	sensMinMaxTemp[1].valid = false;
+	//sensMinMaxTemp[1].ampMax = 0;
+	//sensMinMaxTemp[1].ampMin = ~0;
+	//sensMinMaxTemp[1].timeMax = 0;
+	//sensMinMaxTemp[1].timeMin = ~0;
+	//sensMinMaxTemp[1].valid = false;
 
 	mtb->data1 = manTrmData;
 	mtb->len1 = len;
@@ -1124,7 +1116,7 @@ static bool RequestMan_20(u16 *data, u16 len, MTB* mtb)
 
 //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
-static bool RequestMan_40(u16 *data, u16 reqlen, MTB* mtb)
+static bool RequestMan_30(u16 *data, u16 reqlen, MTB* mtb)
 {
 	__packed struct Req { u16 rw; u16 off; u16 len; };
 
@@ -1160,13 +1152,13 @@ static bool RequestMan_40(u16 *data, u16 reqlen, MTB* mtb)
 
 	if (reqlen == 1 || (reqlen >= 2 && data[1] == 0))
 	{
-		curManVec40 = manVec40[sensInd&1];
+		curManVec30 = manVec30[sensInd&1];
 
-		if (curManVec40.Valid())
+		if (curManVec30.Valid())
 		{
-			RspDsp01 &rsp = *((RspDsp01*)(curManVec40->GetDataPtr()));
+			RspDsp30 &rsp = *((RspDsp30*)(curManVec30->GetDataPtr()));
 
-			u16 sz = 21 + rsp.CM.sl;
+			u16 sz = sizeof(rsp.h)/2 + rsp.h.sl;
 
 			mtb->data2 = ((u16*)&rsp)+1;
 
@@ -1195,9 +1187,9 @@ static bool RequestMan_40(u16 *data, u16 reqlen, MTB* mtb)
 
 		sensInd = (sensInd + 1) & 1;
 	}
-	else if (curManVec40.Valid())
+	else if (curManVec30.Valid())
 	{
-		RspDsp01 &rsp = *((RspDsp01*)(curManVec40->GetDataPtr()));
+		RspDsp30 &rsp = *((RspDsp30*)(curManVec30->GetDataPtr()));
 
 		req40_count2++;
 
@@ -1210,129 +1202,12 @@ static bool RequestMan_40(u16 *data, u16 reqlen, MTB* mtb)
 			len = data[2];
 		};
 
-		u16 sz = 21 + rsp.CM.sl;
+		u16 sz = sizeof(rsp.h)/2 + rsp.h.sl;
 
 		if (sz >= off)
 		{
 			req40_count3++;
 
-			u16 ml = sz - off;
-
-			if (len > ml) len = ml;
-
-			mtb->data2 = (u16*)&rsp + data[1]+1;
-			mtb->len2 = len;
-		};
-	};
-
-	return true;
-}
-
-//+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-
-static bool RequestMan_30(u16 *data, u16 len, MTB* mtb)
-{
-	if (data == 0 || len == 0 || len > 3 || mtb == 0) return false;
-
-	manTrmData[0] = data[0];	
- 
-	motoTargetRPS = (data[0]&15) * 100;
-		
-	//Set_Sync_Rot(motoTargetRPS, *curSPR);
-
-	Update_RPS_SPR();
-
-	mtb->data1 = manTrmData;
-	mtb->len1 = 1;
-	mtb->data2 = 0;
-	mtb->len2 = 0;
-
-	return true;
-}
-
-//+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-
-static bool RequestMan_50(u16 *data, u16 reqlen, MTB* mtb)
-{
-	__packed struct Req { u16 rw; u16 off; u16 len; };
-
-	Req &req = *((Req*)data);
-
-	if (data == 0 || reqlen == 0 || reqlen > 4 || mtb == 0) return false;
-
-	//byte nf = ((req.rw>>4)-3)&3;
-	//byte nr = req.rw & 7;
-
-//	curRcv[nf] = nr;
-
-	struct Rsp { u16 rw; };
-	
-	static Rsp rsp; 
-	
-	static u16 prevOff = 0;
-	static u16 prevLen = 0;
-	static u16 maxLen = 200;
-
-	SetModeIM();
-
-	rsp.rw = req.rw;
-
-	mtb->data1 = (u16*)&rsp;
-	mtb->len1 = sizeof(rsp)/2;
-	mtb->data2 = 0;
-	mtb->len2 = 0;
-
-	//R01 *r01 = curManVec50;
-	
-	if (reqlen == 1 || (reqlen >= 2 && data[1] == 0))
-	{
-		curManVec50 = manVec50;
-
-		if (curManVec50.Valid())
-		{
-			RspDsp01 &rsp = *((RspDsp01*)curManVec50->GetDataPtr());
-
-			mtb->data2 = ((u16*)&rsp)+1;
-
-			prevOff = 0;
-
-			u16 sz = 12 + rsp.IM.dataLen*2;
-
-			if (reqlen == 1)
-			{
-				mtb->len2 = sz;
-				prevLen = sz;
-			}
-			else 
-			{
-				if (reqlen == 3) maxLen = data[2];
-
-				u16 len = maxLen;
-
-				if (len > sz) len = sz;
-
-				mtb->len2 = len;
-
-				prevLen = len;
-			};
-		};
-	}
-	else if (curManVec50.Valid())
-	{
-		RspDsp01 &rsp = *((RspDsp01*)curManVec50->GetDataPtr());
-
-		u16 off = prevOff + prevLen;
-		u16 len = prevLen;
-		u16 sz = 12 + rsp.IM.dataLen*2;
-
-		if (reqlen == 3)
-		{
-			off = data[1];
-			len = data[2];
-		};
-
-		if (sz >= off)
-		{
 			u16 ml = sz - off;
 
 			if (len > ml) len = ml;
@@ -1388,27 +1263,27 @@ static bool RequestMan_90(u16 *data, u16 len, MTB* mtb)
 		case 0x2:	mv.sampleTime		= data[2];			break;
 		case 0x3:	mv.sampleLen		= data[2];			break;
 		case 0x4:	mv.sampleDelay 		= data[2];			break;
-		case 0x5:	mv.deadTime			= data[2];			break;
-		case 0x6:	mv.descriminant		= data[2];			break;
+		//case 0x5:	mv.deadTime			= data[2];			break;
+		//case 0x6:	mv.descriminant		= data[2];			break;
 		case 0x7:	mv.freq				= data[2];			break;
 
-		case 0x11:	mv.gainRef			= data[2];			break;
-		case 0x12:	mv.sampleTimeRef	= data[2];			break;
-		case 0x13:	mv.sampleLenRef		= data[2];			break;
-		case 0x14:	mv.sampleDelayRef 	= data[2];			break;
-		case 0x15:	mv.deadTimeRef		= data[2];			break;
-		case 0x16:	mv.descriminantRef	= data[2];			break;
-		case 0x17:	mv.refFreq			= data[2];			break;
+		//case 0x11:	mv.gainRef			= data[2];			break;
+		//case 0x12:	mv.sampleTimeRef	= data[2];			break;
+		//case 0x13:	mv.sampleLenRef		= data[2];			break;
+		//case 0x14:	mv.sampleDelayRef 	= data[2];			break;
+		//case 0x15:	mv.deadTimeRef		= data[2];			break;
+		//case 0x16:	mv.descriminantRef	= data[2];			break;
+		//case 0x17:	mv.refFreq			= data[2];			break;
 
 		case 0x20:	mv.filtrType		= data[2];			break;
-		case 0x21:	mv.packType			= data[2];			break;
+		//case 0x21:	mv.packType			= data[2];			break;
 
-		case 0x30:	mv.cmSPR 			= data[2]; Update_RPS_SPR();	break;
-		case 0x31:	mv.imSPR 			= data[2]; Update_RPS_SPR();	break;
+		//case 0x30:	mv.cmSPR 			= data[2]; Update_RPS_SPR();	break;
+		//case 0x31:	mv.imSPR 			= data[2]; Update_RPS_SPR();	break;
 
 		case 0x40:	mv.fireVoltage		= data[2];			break;
-		case 0x41:	mv.motoLimCur		= data[2];			break;
-		case 0x42:	mv.motoMaxCur		= data[2];			break;
+		//case 0x41:	mv.motoLimCur		= data[2];			break;
+		//case 0x42:	mv.motoMaxCur		= data[2];			break;
 
 		default:
 
@@ -1459,8 +1334,6 @@ static bool RequestMan(u16 *buf, u16 len, MTB* mtb)
 		case 1: 	r = RequestMan_10(buf, len, mtb); break;
 		case 2: 	r = RequestMan_20(buf, len, mtb); break;
 		case 3:		r = RequestMan_30(buf, len, mtb); break;
-		case 4:		r = RequestMan_40(buf, len, mtb); break;
-		case 5: 	r = RequestMan_50(buf, len, mtb); break;
 		case 8: 	r = RequestMan_80(buf, len, mtb); break;
 		case 9:		r = RequestMan_90(buf, len, mtb); break;
 		case 0xF:	r = RequestMan_F0(buf, len, mtb); break;
@@ -1797,7 +1670,7 @@ static void MainMode()
 	static Ptr<REQ> rq;
 	//static Ptr<UNIBUF> flwb;
 	static TM32 tm;
-	static RspDsp01 *rsp = 0;
+	static RspDsp30 *rsp = 0;
 
 	switch (mainModeState)
 	{
@@ -1807,9 +1680,9 @@ static void MainMode()
 
 			if (rq.Valid())
 			{
-				rsp = (RspDsp01*)(rq->rsp->GetDataPtr());
+				rsp = (RspDsp30*)(rq->rsp->GetDataPtr());
 
-				RequestFlashWrite(rq->rsp, rsp->rw);
+				RequestFlashWrite(rq->rsp, rsp->h.rw);
 
 				mainModeState++;
 			};
@@ -1817,40 +1690,18 @@ static void MainMode()
 			break;
 
 		case 1:
+		{
 
-			if ((rsp->rw & 0xFF) == 0x40)
-			{
-				byte n = rsp->CM.sensType & 1;
+			byte n = rsp->h.fnum;
 
-				manVec40[n] = rq->rsp;
-
-				AmpTimeMinMax& mm = sensMinMaxTemp[n];
-
-				u16 amp = rsp->CM.maxAmp;
-				u16 time = rsp->CM.fi_time;
-
-				if (amp > mm.ampMax) mm.ampMax = amp;
-				if (amp < mm.ampMin) mm.ampMin = amp;
-				if (time > mm.timeMax) mm.timeMax = time;
-				if (time < mm.timeMin) mm.timeMin = time;
-
-				mm.valid = true;
-			}
-			else if ((rsp->rw & 0xFF) == 0x50)
-			{
-				manVec50 = rq->rsp;
-			};
-
-			if (imModeTimeout.Check(10000))
-			{
-				SetModeCM();
-			};
+			manVec30[n] = rq->rsp;
 
 			rq.Free();
 
 			mainModeState++;
 
 			break;
+		};
 
 		case 2:
 
@@ -2639,23 +2490,10 @@ static void InitMainVars()
 	mv.sampleTime		= 8; 
 	mv.sampleLen		= 500; 
 	mv.sampleDelay 		= 400; 
-	mv.deadTime			= 400; 
-	mv.descriminant		= 400; 
 	mv.freq				= 500; 
-	mv.gainRef			= 0; 
-	mv.sampleTimeRef	= 8; 
-	mv.sampleLenRef		= 500; 
-	mv.sampleDelayRef 	= 400; 
-	mv.deadTimeRef		= 400; 
-	mv.descriminantRef	= 400; 
-	mv.refFreq			= 500; 
 	mv.filtrType		= 0;
-	mv.packType			= 0;
-	mv.cmSPR			= 36;
-	mv.imSPR			= 180;
+	mv.firePeriod		= 100;
 	mv.fireVoltage		= 500;
-	mv.motoLimCur		= 2000;
-	mv.motoMaxCur		= 3000;
 }
 
 //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -3045,8 +2883,8 @@ int main()
 
 	//for (u32 i = 0; i < ArraySize(buf); i++) buf[i] = i;
 
-	//fps = CRC_CCITT_DMA(buf, 8000, 0xFFFF);
-	//fc = CRC_CCITT_PIO(buf, 8000, 0xFFFF);
+	//fps = CRC_CCITT_DMA(0, 1);
+	//fc = GetCRC16_CCIT_refl(0, 1);
 
 	//fps = CRC_CCITT_DMA(buf, 6000, 0xFFFF);
 	//fps = CRC_CCITT_DMA(buf+6000, 2000, fps);

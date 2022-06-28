@@ -6,6 +6,7 @@
 #endif 
 
 #include <cdefBF592-A.h>
+#include <sysreg.h>
 
 #include "types.h"
 
@@ -680,8 +681,38 @@ namespace HW
 
 }; // namespace HW
 
-extern T_HW::BF_IHP VectorTableInt[16];
-extern T_HW::BF_IHP VectorTableExt[45];
+//extern T_HW::BF_IHP VectorTableInt[16];
+//extern T_HW::BF_IHP VectorTableExt[45];
+
+#define PID_Watchdog_Timer				(31)
+#define PID_DMA_14_15_Mem_DMA_Stream_1	(30)
+#define PID_DMA_12_13_Mem_DMA_Stream_0	(29)
+#define PID_TWI							(24)
+#define PID_Port_G_Interrupt_B			(23)
+#define PID_Port_G_Interrupt_A			(22)
+#define PID_GP_Timer_2					(21)
+#define PID_GP_Timer_1					(20)
+#define PID_GP_Timer_0					(19)
+#define PID_Port_F_Interrupt_B			(18)
+#define PID_Port_F_Interrupt_A			(17)
+#define PID_DMA8_UART0_TX				(16)
+#define PID_DMA7_UART0_RX				(15)
+#define PID_DMA6_SPI1_RX_TX				(14)
+#define PID_DMA5_SPI0_RX_TX				(13)
+#define PID_DMA4_SPORT1_TX				(12)
+#define PID_DMA3_SPORT1_RX				(11)
+#define PID_DMA2_SPORT0_TX				(10)
+#define PID_DMA1_SPORT0_RX				(9)
+#define PID_DMA0_PPI					(8)
+#define PID_UART0_Status				(7)
+#define PID_SPI1_Status					(6) 
+#define PID_SPI0_Status					(5) 
+#define PID_SPORT1_Status				(4) 
+#define PID_SPORT0_Status				(3) 
+#define PID_PPI_Status					(2) 
+#define PID_DMA_Error_generic			(1) 
+#define PID_PLL_Wakeup					(0) 
+
 
 #undef MK_PTR
 #undef MKPID

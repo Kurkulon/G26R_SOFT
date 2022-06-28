@@ -1,6 +1,8 @@
 #include "hardware.h"
 #include "ComPort.h"
-#include "CRC16.h"
+#include "list.h"
+#include "CRC16_CCIT.h"
+//#include "CRC16.h"
 //#include "at25df021.h"
 
 //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -18,9 +20,16 @@ static ComPort com;
 
 //static byte twiBuffer[14] = {0x11,0x22,0x33,0x44,0x55,0x66,0x77,0x88,0x99,0xAA,0xBB,0xCC,0xDD,0xEE};
 
-struct Req30 { u16 rw; u16 gain; u16 st; u16 sl; u16 sd; u16 flt; u16 data[1024]; };
+struct Rsp30 { Rsp30 *next; struct Hdr { u16 rw; u16 fnum; u16 gain; u16 st; u16 sl; u16 sd; u16 flt; } h; u16 data[1024+32]; };
 
-static Req30 req30[13];
+#pragma instantiate List<Rsp30>
+static List<Rsp30> freeRsp30;
+static List<Rsp30> rawRsp30;
+static List<Rsp30> readyRsp30;
+
+static Rsp30 rsp30[13];
+
+static Rsp30 *curRsp30 = 0;
 
 struct Cmd
 {
@@ -53,13 +62,13 @@ static Cmd cmdrsp;
 //static byte gain[3] = { 7, 7, 7 };
 //static byte netAdr = 1;
 
-static u16 manReqWord = 0xA900;
-static u16 manReqMask = 0xFF00;
+static const u16 manReqWord = 0xA900;
+static const u16 manReqMask = 0xFF00;
 
 static u16 numDevice = 1;
 static u16 verDevice = 0x101;
 
-static u32 manCounter = 0;
+static u16 manCounter = 0;
 
 static bool startFire = false;
 
@@ -67,6 +76,10 @@ static u16 sampleDelay = 600;//800;
 static u16 sampleTime = 8;
 static u16 sampleLen = 512;
 static u16 gain = 0;
+static u16 filtr = 0;
+static u16 firePeriod = 0;
+static u32 period = 0;
+
 
 
 //static void SaveParams();
@@ -74,28 +87,49 @@ static u16 gain = 0;
 
 //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
+static void SetFirePeriod(u16 p)
+{
+	if (firePeriod != p)
+	{
+		firePeriod = p;
+		period = MS2CCLK(p);
+	};
+}
+
+//+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+static void InitRspList()
+{
+	for (u16 i = 0; i < ArraySize(rsp30); i++)
+	{
+		freeRsp30.Add(&rsp30[i]);
+	};
+}
+
+//+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
 static void UpdateFire()
 {
 	static byte i = 0;
-	static bool ready = false;
-	static RTM32 tm;
+	static volatile bool ready = false;
+	static CTM32 tm;
+	static CTM32 tm2;
 
 	static byte count = 0;
 	static byte fnum = 0;
 
 
-	Req30 &req = req30[fnum];
-
+	static Rsp30 *rsp = 0;
 
 	switch (i)
 	{
 		case 0:
 
-			if (startFire)
-			{
-				startFire = false;
+			rsp = freeRsp30.Get();
 
-				fnum = 0;
+			if (rsp != 0)
+			{
+				rsp->h.gain = gain;
 
 				SetGain(gain);
 
@@ -152,7 +186,12 @@ static void UpdateFire()
 
 				if (d < 0) d = 0;
 
-				ReadPPI(req.data, ArraySize(req.data), sampleTime, d, &ready);
+				rsp->h.fnum = fnum;
+				rsp->h.st = sampleTime;
+				rsp->h.sl = sampleLen;
+				rsp->h.sd = sampleDelay;
+
+				ReadPPI(rsp->data, sampleLen + 8, sampleTime, d, &ready);
 			};
 
 			i++;
@@ -163,25 +202,9 @@ static void UpdateFire()
 
 			if (ready)
 			{
-				u16 *p = req.data;
+				rawRsp30.Add(rsp);
 
-				for (u16 j = ArraySize(req.data)-8; j > 0; j--)
-				{
-					*p = p[8] - 2048;
-					p++;
-				};
-
-				for (u16 j = 8; j > 0; j--)
-				{
-					*p++ = 0;
-				};
-
-				req.rw = manReqWord + 0x30 + fnum;
-				req.gain = gain;
-				req.st = sampleTime;
-				req.sl = sampleLen;
-				req.sd = sampleDelay;
-				req.flt = 0;
+				rsp = 0;
 
 				i++;
 			};
@@ -190,217 +213,119 @@ static void UpdateFire()
 
 		case 6:
 
-			if (tm.Check(US2CLK(2000)))
+			if (tm.Check(US2CCLK(50)))
 			{
-				fnum++;
-				
-				i = (fnum < 13) ? 1 : 0;
+				if (fnum < 12)
+				{
+					fnum += 1;
+					i = 0;
+				}
+				else
+				{
+					fnum = 0;
+					i++;
+				};
+			};
+
+			break;
+
+		case 7:
+
+			if (tm2.Check(period))
+			{
+				i = 0;
 			};
 
 			break;
 	};
 
 }
-//+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-
-static bool RequestMan_00(u16 *data, u16 len, ComPort::WriteBuffer *wb)
-{
-	static u16 rsp[3];
-
-	if (wb == 0) return false;
-
-	rsp[0] = manReqWord;
-	rsp[1] = numDevice;
-	rsp[2] = verDevice;
-
-	wb->data = rsp;
-	wb->len = sizeof(rsp);
-
-	return true;
-}
 
 //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
-static bool RequestMan_10(u16 *data, u16 len, ComPort::WriteBuffer *wb)
+static void ProcessData()
 {
-	//1.1 Запрос параметров
-	//	0xA910
-	//	------
+	static Rsp30 *rsp = 0;
 
-	static u16 rsp[6];
+	static byte i = 0;
 
-	if (wb == 0) return false;
-
-	rsp[0] = manReqWord|0x10;	// 	1. ответное слово
-	rsp[1] = gain;				//	2. КУ
-	rsp[2] = sampleTime;		//	3. Шаг оцифровки
-	rsp[3] = sampleLen;			//	4. Длина оцифровки
-	rsp[4] = sampleDelay;		//	5. Задержка оцифровки
-	rsp[5] = 0;					//	6. Фильтр
-
-	wb->data = rsp;			 
-	wb->len = sizeof(rsp);	 
-
-	return true;
-}
-
-//+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-
-static bool RequestMan_20(u16 *data, u16 len, ComPort::WriteBuffer *wb)
-{
-	static u16 rsp[8];
-
-	if (wb == 0) return false;
-
-	startFire = true;
-
-	rsp[0] = manReqWord|0x20;			//	1. ответное слово	
-	rsp[1] = GD(&manCounter, u16, 0);	//	2. счётчик. младшие 2 байта
-	rsp[2] = GD(&manCounter, u16, 1);	//	3. счётчик. старшие 2 байта
-	rsp[3] = 4;							//	4. статус
-	rsp[4] = 5;							//	5. AX
-	rsp[5] = 6;							//	6. AY
-	rsp[6] = 7;							//	7. AZ
-	rsp[7] = 8;							//	8. AT
- 
-	wb->data = rsp;
-	wb->len = sizeof(rsp);
-
-	return true;
-}
-
-//+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-
-static bool RequestMan_30(u16 *data, u16 len, ComPort::WriteBuffer *wb)
-{
-//	static u16 rsp[6+512];
-
-	if (wb == 0) return false;
-
-	byte num = data[0] & 15;
-
-	if (num > 12) { num = 12; };
-
-	Req30 &req = req30[num];
-
-	//rsp[0] = data[0];			// 	1. ответное слово
-	//rsp[1] = 1;				 	//	2. КУ
-	//rsp[2] = 2;		 			//	3. Шаг оцифровки
-	//rsp[3] = 512;			 	//	4. Длина оцифровки
-	//rsp[4] = 0;					//	5. Задержка оцифровки
-	//rsp[5] = 0;					//	6. Фильтр
-	//rsp[6] = 0;					//	7-?. данные (до 2048шт)
-
-	//req.rw = data[0];			// 	1. ответное слово
-	//req.gain = 1;				 	//	2. КУ
-	//req.st = 8;		 			//	3. Шаг оцифровки
-	//req.sl = 512;			 	//	4. Длина оцифровки
-	//req.sd = 0;					//	5. Задержка оцифровки
-	//req.flt = 0;					//	6. Фильтр
-//	rsp[6] = 0;					//	7-?. данные (до 2048шт)
-
-	wb->data = &req;
-	wb->len = req.sl*2 + sizeof(req) - sizeof(req.data);
-
-	return true;
-}
-
-//+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-
-static bool RequestMan_80(u16 *data, u16 len, ComPort::WriteBuffer *wb)
-{
-	static u16 rsp[1];
-
-	if (wb == 0 || len < 3) return false;
-
-	switch (data[1])
+	switch (i)
 	{
-		case 1:
+		case 0:
 
-			numDevice = data[2];
+			rsp = rawRsp30.Get();
 
-			break;
-	};
-
-	rsp[0] = manReqWord|0x80;
- 
-	wb->data = rsp;
-	wb->len = sizeof(rsp);
-
-	return true;
-}
-
-//+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-
-static bool RequestMan_90(u16 *data, u16 len, ComPort::WriteBuffer *wb)
-{
-	static u16 rsp[1];
-
-	if (wb == 0 || len < 3) return false;
-
-	switch (data[1])
-	{
-		case 1:
-
-			gain = data[2] & 0xF;
-
-			break;
-
-		case 2:
-
-			sampleTime = data[2];
-
-			break;
-
-		case 3:
-
-			sampleLen = data[2];
-
-			if (sampleLen < 64)
+			if (rsp != 0)
 			{
-				sampleLen = 64;
-			}
-			else if (sampleLen > 1024)
-			{
-				sampleLen = 1024;
+				u16 *p = rsp->data;
+
+				for (u16 j = rsp->h.sl; j > 0; j--)
+				{
+					*p = p[8] - 2048;
+					p++;
+				};
+
+				rsp->h.rw = manReqWord|0x30;
+				rsp->h.flt = 0;
+
+				i++;
 			};
 
 			break;
 
-		case 4:
+		case 1:
 
-			sampleDelay = data[2];
+			rsp->data[rsp->h.sl] = GetCRC16_CCIT_refl(&rsp->h, sizeof(rsp->h) + rsp->h.sl*2, 0xFFFF); 
+
+			readyRsp30.Add(rsp);
+
+			i = 0;
 
 			break;
-
-		case 5:
-
-			break;
-
 	};
-
-	rsp[0] = manReqWord|0x90;
- 
-	wb->data = rsp;
-	wb->len = sizeof(rsp);
-
-	return true;
 }
 
 //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
-static bool RequestMan_F0(u16 *data, u16 len, ComPort::WriteBuffer *wb)
+static bool RequestMan_01(u16 *data, u16 len, ComPort::WriteBuffer *wb)
 {
-	static u16 rsp[1];
+	static RspDsp01 rsp;
+
+	ReqDsp01 *req = (ReqDsp01*)data;
+
+	gain		= req->gain;
+	sampleDelay = req->sampleDelay;
+	sampleLen	= req->sampleLen;
+	sampleTime	= req->sampleTime;
+	filtr		= req->flt;
+	
+	SetFirePeriod(req->firePeriod);
 
 	if (wb == 0) return false;
 
-	//SaveParams();
+	if (curRsp30 != 0)
+	{
+		freeRsp30.Add(curRsp30);
 
-	rsp[0] = manReqWord|0xF0;
- 
-	wb->data = rsp;
-	wb->len = sizeof(rsp);
+		curRsp30 = 0;
+	};
+
+	curRsp30 = readyRsp30.Get();
+
+	if (curRsp30 == 0)
+	{
+		rsp.rw = data[0];
+		rsp.counter = manCounter;
+		rsp.crc = GetCRC16_CCIT_refl(&rsp, sizeof(rsp)-2);
+
+		wb->data = &rsp;			 
+		wb->len = sizeof(rsp);	 
+	}
+	else
+	{
+		wb->data = &curRsp30->h;			 
+		wb->len = sizeof(curRsp30->h) + (curRsp30->h.sl+1)*2;	 
+	};
 
 	return true;
 }
@@ -424,17 +349,11 @@ static bool RequestMan(ComPort::WriteBuffer *wb, ComPort::ReadBuffer *rb)
 
 	u16 len = (rb->len)>>1;
 
-	t = (t>>4) & 0xF;
+	t &= 0xFF;
 
 	switch (t)
 	{
-		case 0: 	r = RequestMan_00(p, len, wb); break;
-		case 1: 	r = RequestMan_10(p, len, wb); break;
-		case 2: 	r = RequestMan_20(p, len, wb); break;
-		case 3: 	r = RequestMan_30(p, len, wb); break;
-		case 8: 	r = RequestMan_80(p, len, wb); break;
-		case 9:		r = RequestMan_90(p, len, wb); break;
-		case 0xF:	r = RequestMan_F0(p, len, wb); break;
+		case 1: 	r = RequestMan_01(p, len, wb); break;
 		
 //		default:	bfURC++; 
 	};
@@ -459,7 +378,7 @@ static void UpdateBlackFin()
 
 			rb.data = buf;
 			rb.maxLen = sizeof(buf);
-			com.Read(&rb, (u32)-1, 10000);
+			com.Read(&rb, ~0, US2CCLK(50));
 			i++;
 
 			break;
@@ -468,7 +387,7 @@ static void UpdateBlackFin()
 
 			if (!com.Update())
 			{
-				if (rb.recieved && rb.len > 0)
+				if (rb.recieved && rb.len > 0 && GetCRC16_CCIT_refl(rb.data, rb.len) == 0)
 				{
 					if (RequestMan(&wb, &rb))
 					{
@@ -597,7 +516,7 @@ int main( void )
 
 	InitHardware();
 
-	//LoadParams();
+	InitRspList();
 
 	com.Connect(6250000, 2);
 
@@ -613,10 +532,11 @@ int main( void )
 		switch(i++)
 		{
 			CALL( UpdateFire()		);
+			CALL( ProcessData()		);
 			CALL( UpdateBlackFin()	);
 		};
 
-		i &= 1; // i = (i > (__LINE__-S-3)) ? 0 : i;
+		i = (i > (__LINE__-S-3)) ? 0 : i;
 
 		#undef CALL
 
