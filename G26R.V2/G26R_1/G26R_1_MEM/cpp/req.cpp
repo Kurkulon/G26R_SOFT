@@ -75,12 +75,15 @@ void RequestQuery::Update()
 			{
 				_req = Get();
 
-				if (_req.Valid()) _state = UPDATE_CRC_1;
-
-				if ((_req->updateCRC || _req->checkCRC) && _req->crcType >= _req->CRC16_NOT_VALID)
+				if (_req.Valid())
 				{
-					_req->updateCRC = false;
-					_req->checkCRC = false;
+					_state = UPDATE_CRC_1;
+
+					if ((_req->updateCRC || _req->checkCRC) && _req->crcType >= _req->CRC16_NOT_VALID)
+					{
+						_req->updateCRC = false;
+						_req->checkCRC = false;
+					};
 				};
 			};
 

@@ -580,6 +580,8 @@ bool CRC_CCITT_DMA_Async(const void* data, u32 len, u16 init)
 {
 	if (busy_CRC_CCITT_DMA) return false;
 
+	HW::PIOA->BSET(27);
+	
 	busy_CRC_CCITT_DMA = true;
 
 	CRC_DMA.CRC_CCITT(data, len, init);
@@ -598,6 +600,8 @@ bool CRC_CCITT_DMA_CheckComplete(u16* crc)
 		*crc = CRC_DMA.Get_CRC_CCITT_Result();
 
 		busy_CRC_CCITT_DMA = false;
+
+		HW::PIOA->BCLR(27);
 
 		return true;
 	}

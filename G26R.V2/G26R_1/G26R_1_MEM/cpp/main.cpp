@@ -377,7 +377,7 @@ Ptr<REQ> CreateDspReq01(u16 tryCount)
 	//q.rb = &rb;
 	//q.wb = &wb;
 	q.preTimeOut = MS2COM(1);
-	q.postTimeOut = US2COM(100);
+	q.postTimeOut = US2COM(50);
 	q.ready = false;
 	q.tryCount = tryCount;
 	//q.ptr = &r;
@@ -2227,7 +2227,7 @@ static void UpdateDSP()
 
 			if (rq->ready)
 			{
-				if (rq->crcOK)
+				if (rq->crcOK && rq->rsp->dataLen != 0)
 				{
 					readyR01.Add(rq);
 				};
@@ -2349,13 +2349,17 @@ static void FlashDSP()
 			};
 		};
 
+		tm.Reset();
+
+		while (!tm.Check(10)) HW::WDT->Update();
+
 		req = CreateDspReq07();
 
 		qdsp.Add(req); while(!req->ready) { qdsp.Update();	};
 
 		tm.Reset();
 
-		while (!tm.Check(10)) HW::WDT->Update();
+		while (!tm.Check(50)) HW::WDT->Update();
 	};
 }
 
@@ -2731,7 +2735,7 @@ static void UpdateParams()
 		CALL( UpdateAccel();			);
 		CALL( UpdateI2C();				);
 		CALL( SaveVars();				);
-		CALL( UpdateMoto();				);
+		//CALL( UpdateMoto();				);
 		CALL( UpdateDSP();				);
 	};
 
@@ -2810,7 +2814,7 @@ int main()
 
 //	static bool c = true;
 
-	//static byte buf[100] = {0x07, 0xA9, 0xC3, 0xFE};
+	//static u16 buf[100] = {0};
 
 	//volatile byte * const FLD = (byte*)0x60000000;	
 	
@@ -2883,8 +2887,8 @@ int main()
 
 	//for (u32 i = 0; i < ArraySize(buf); i++) buf[i] = i;
 
-	//fps = CRC_CCITT_DMA(0, 1);
-	//fc = GetCRC16_CCIT_refl(0, 1);
+	//fps = CRC_CCITT_DMA(0, 100);
+	//fc =  GetCRC16_CCIT_refl(0, 100);
 
 	//fps = CRC_CCITT_DMA(buf, 6000, 0xFFFF);
 	//fps = CRC_CCITT_DMA(buf+6000, 2000, fps);

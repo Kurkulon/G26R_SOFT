@@ -6,6 +6,8 @@
 #include "hw_conf.h"
 #include "hw_rtm.h"
 #include "hw_nand.h"
+#include "list.h"
+#include "flash.h"
 
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 //#define NAND_SAMSUNG
@@ -16,10 +18,10 @@
 #define NAND_CHIP_MASK		(NAND_MAX_CHIP-1)
 
 #define LIST_ITEMS_NUM			128
-#define FLASH_WRITE_BUFFER_NUM	8
+#define FLASH_WRITE_BUFFER_NUM	16
 #define FLASH_READ_BUFFER_NUM	8
 
-//++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+//++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 static const bool verifyWritePage = false; // Проверка записаной страницы, путём чтения страницы и сравнения с буфером
 static const bool verifySpare = true;	// Проверка записаной страницы, путём чтения страницы и сравнения с буфером

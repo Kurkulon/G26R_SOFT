@@ -10,8 +10,27 @@
 #include "hw_rtm.h"
 #include "manch.h"
 #include "hw_conf.h"
+#include "flash.h"
 
 //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+#define UNIBUF_LEN (3072)
+
+//++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+struct UNIBUF : public PtrItem<UNIBUF>
+{
+	UNIBUF() : dataOffset(sizeof(VecData::Hdr)), dataLen(0)  { /*freeBufList.Add(this);*/ }
+
+	u16		dataOffset;
+	u16 	dataLen;
+
+	byte	data[UNIBUF_LEN]; // Последние 2 байта CRC16
+
+	void*	GetDataPtr() { return data+dataOffset; }
+};
+
+//++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 
 extern void Hardware_Init();

@@ -69,7 +69,7 @@ struct CTM32
 	u32 pt;
 
 	CTM32() : pt(0) {}
-	bool Check(u32 v) { u32 t = GetCycles32(); if ((t - pt) >= v) { pt -= t; return true; } else { return false; }; }
+	bool Check(u32 v) { u32 t = GetCycles32(); if ((t - pt) >= v) { pt += v; return true; } else { return false; }; }
 	void Reset() { pt = GetCycles32(); }
 };
 

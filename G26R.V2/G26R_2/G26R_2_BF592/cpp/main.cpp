@@ -27,7 +27,7 @@ static List<Rsp30> freeRsp30;
 static List<Rsp30> rawRsp30;
 static List<Rsp30> readyRsp30;
 
-static Rsp30 rsp30[13];
+static Rsp30 rsp30[4];
 
 static Rsp30 *curRsp30 = 0;
 
@@ -78,7 +78,7 @@ static u16 sampleLen = 512;
 static u16 gain = 0;
 static u16 filtr = 0;
 static u16 firePeriod = 0;
-static u32 period = 0;
+static u32 period = MS2CCLK(100);
 
 
 
@@ -203,6 +203,7 @@ static void UpdateFire()
 			if (ready)
 			{
 				rawRsp30.Add(rsp);
+				//freeRsp30.Add(rsp);
 
 				rsp = 0;
 
@@ -275,7 +276,7 @@ static void ProcessData()
 
 		case 1:
 
-			rsp->data[rsp->h.sl] = GetCRC16_CCIT_refl(&rsp->h, sizeof(rsp->h) + rsp->h.sl*2, 0xFFFF); 
+			rsp->data[rsp->h.sl] = GetCRC16_CCIT_refl(&rsp->h, sizeof(rsp->h) + rsp->h.sl*2); 
 
 			readyRsp30.Add(rsp);
 
@@ -345,7 +346,7 @@ static bool RequestMan(ComPort::WriteBuffer *wb, ComPort::ReadBuffer *rb)
 		return false;
 	};
 
-	manCounter += 1;
+	//manCounter += 1;
 
 	u16 len = (rb->len)>>1;
 
@@ -378,7 +379,7 @@ static void UpdateBlackFin()
 
 			rb.data = buf;
 			rb.maxLen = sizeof(buf);
-			com.Read(&rb, ~0, US2CCLK(50));
+			com.Read(&rb, ~0, US2CCLK(100));
 			i++;
 
 			break;
