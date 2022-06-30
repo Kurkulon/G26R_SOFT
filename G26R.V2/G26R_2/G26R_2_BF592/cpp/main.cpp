@@ -27,7 +27,7 @@ static List<Rsp30> freeRsp30;
 static List<Rsp30> rawRsp30;
 static List<Rsp30> readyRsp30;
 
-static Rsp30 rsp30[4];
+static Rsp30 rsp30[14];
 
 static Rsp30 *curRsp30 = 0;
 

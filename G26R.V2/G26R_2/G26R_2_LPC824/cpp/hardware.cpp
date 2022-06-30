@@ -28,10 +28,45 @@
 #define SLVDESELEN		(1<<15)
 
 
+#define PIN_LIN			13 
+#define PIN_SDA			11 
+#define PIN_SCL			10 
+#define PIN_DIS			16 
+#define PIN_DATA		27
+#define PIN_URXD		26
+#define PIN_SCLK		25
+#define PIN_UTXD		24
+#define PIN_DACSYNC		15
+#define PIN_SYNC		0
+#define PIN_HIN			22
+#define PIN_A3			20
+#define PIN_A2			19
+#define PIN_A1			18
+#define PIN_A0			17
+
+
+#define LIN				(1<<PIN_LIN	) 
+#define SDA				(1<<PIN_SDA	) 
+#define SCL				(1<<PIN_SCL	) 
+#define DIS				(1<<PIN_DIS	) 
+#define DATA			(1<<PIN_DATA) 
+#define URXD			(1<<PIN_URXD) 
+#define SCLK			(1<<PIN_SCLK) 
+#define UTXD			(1<<PIN_UTXD) 
+#define DACSYNC			(1<<PIN_DACSYNC) 
+#define SYNC			(1<<PIN_SYNC) 
+#define HIN				(1<<PIN_HIN	) 
+#define A3				(1<<PIN_A3	) 
+#define A2				(1<<PIN_A2	) 
+#define A1				(1<<PIN_A1	) 
+#define A0				(1<<PIN_A0	) 
+
+
 //u16 curHV = 0;
 //u16 reqHV = 800;
 u16 curHV = 0;
 u16 reqHV = 0;
+u32 fHV = 0;
 //u32 tachoCount = 0;
 //i32 shaftPos = 0;
 //
@@ -69,9 +104,9 @@ extern "C" void SystemInit()
 
 	SYSCON->PDRUNCFG &= ~(1<<6); // WDTOSC_PD = 0
 
-	GPIO->DIRSET0 = (1<<17)|(1<<18)|(1<<19)|(1<<20)|(1<<22)|(1<<12)|(1<<13)|(1<<16);
-	GPIO->CLR0 = (1<<13)|(1<<22);
-	GPIO->SET0 = (1<<17)|(1<<18)|(1<<19)|(1<<20);
+	GPIO->DIRSET0 = A0|A1|A2|A3|HIN|(1<<12)|LIN|DIS;
+	GPIO->CLR0 = LIN|HIN;
+	GPIO->SET0 = A0|A1|A2|A3;
 
 	IOCON->PIO0_1.B.MODE = 0;
 
@@ -92,8 +127,8 @@ extern "C" void SystemInit()
 	//SYSCON->SYSAHBCLKDIV  = SYSAHBCLKDIV_Val;
 
 	SYSCON->UARTCLKDIV = 1;
-	SWM->U0_RXD = 26;
-	SWM->U0_TXD = 24;
+	SWM->U0_RXD = PIN_URXD;
+	SWM->U0_TXD = PIN_UTXD;
 
 	DMA->SRAMBASE = DmaTable;
 	DMA->CTRL = 1;
@@ -121,7 +156,7 @@ static void InitSCT()
 	//SCT->MATCH_L[5] = US2CLK(4.1249);	// LIN=1; HIN=0; DIS=0;
 	//SCT->MATCH_L[6] = US2CLK(5.1665);	// LIN=0; HIN=0; DIS=0;
 	SCT->MATCH_L[3] = US2CLK(7);		// LIN=0; HIN=0; DIS=1;
-	SCT->MATCH_L[4] = US2CLK(1000);		// LIN=0; HIN=0; DIS=0;
+	SCT->MATCH_L[4] = US2CLK(500);		// LIN=0; HIN=0; DIS=0;
 
 	SCT->OUT[0].SET = (1<<1);//|(1<<5);					// LIN
 	SCT->OUT[0].CLR = (1<<0)|(1<<2)|(1<<3)|(1<<4)/*|(1<<6)*/;
@@ -163,9 +198,9 @@ static void InitSCT()
 
 	SCT->CONFIG = 1<<7; 
 
-	SWM->CTOUT_0 = 13;
-	SWM->CTOUT_1 = 22;
-	SWM->CTOUT_2 = 16;
+	SWM->CTOUT_0 = PIN_LIN;
+	SWM->CTOUT_1 = PIN_HIN;
+	SWM->CTOUT_2 = PIN_DIS;
 
 	INPUTMUX->SCT0_INMUX[0] = 0;
 	SWM->CTIN_0 = 0;
@@ -340,8 +375,8 @@ static void UpdateTWI()
 
 		case 1:
 
-			HW::GPIO->MASK0 = ~(0xF<<17);
-			HW::GPIO->MPIN0 = req.chnl<<17;
+			HW::GPIO->MASK0 = ~(A0|A1|A2|A3);
+			HW::GPIO->MPIN0 = req.chnl<<PIN_A0;
 
 			i++;
 
@@ -376,7 +411,7 @@ static void UpdateADC()
 	enum C { S = (__LINE__+3) };
 	switch(i++)
 	{
-		CALL( curHV = ((ADC->DAT0&0xFFF0) * 9091) >> 16; );
+		CALL( fHV += (((ADC->DAT2&0xFFF0) * 567) >> 16) - 6 - curHV; curHV = fHV >> 4; );
 		//CALL( fvAP += (((ADC->DAT1&0xFFF0) * 3300) >> 16) - vAP; vAP = fvAP >> 3;	);
 	};
 
@@ -407,12 +442,62 @@ static void InitADC()
 
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
+static void UpdateDAC()
+{
+	using namespace HW;
+
+	static TM32 tm;
+	static u32 dstFV = 0;
+
+	if ((SPI0->STAT & SPI_STAT_TXRDY(1)) == 0) return;
+
+	if (tm.Check(1))
+	{
+		u32 t = ((reqHV+14) * 521711UL);
+
+		dstFV += (i32)(t - dstFV) / 128;
+
+		t = dstFV >> 16;
+
+		if (t > 0xFFF) t = 0xFFF;
+
+		t = (~t) & 0xFFF;
+
+		SPI0->TXDATCTL = t | SPI_LEN(15)|SPI_EOT(1)|SPI_TXSSEL0_N(0)|SPI_TXSSEL1_N(1)|SPI_TXSSEL2_N(1)|SPI_TXSSEL3_N(1)|SPI_RXIGNORE(1);
+	};
+}
+
+//++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+static void InitDAC()
+{
+	using namespace HW;
+
+	//SWM->PINASSIGN[3] = (SWM->PINASSIGN[3] & 0x00FFFFFF) | 0x09000000;
+	//SWM->PINASSIGN[4] = (SWM->PINASSIGN[4] & 0xFF000000) | 0x00100FFF;
+
+	SWM->SPI0_SCK	= PIN_SCLK;	//9;
+	SWM->SPI0_MOSI	= PIN_DATA;	//15;
+	SWM->SPI0_SSEL0	= PIN_DACSYNC;	//16;
+
+	SYSCON->SYSAHBCLKCTRL |= CLK::SPI0_M;
+
+	SPI0->CFG = SPI_MASTER(1) | SPI_ENABLE(1);
+	SPI0->DLY = SPI_PRE_DELAY(1)|SPI_POST_DELAY(1);
+	SPI0->DIV = 4;
+
+	//SPI0->TXDATCTL = SPI_TXDATCTL_LEN(16) | SPI_TXDATCTL_EOT(1) | SPI_TXDATCTL_TXSSEL0_N(1) | SPI_TXDATCTL_RXIGNORE(1);
+}
+
+//++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
 void InitHardware()
 {
 	using namespace HW;
 
 	Init_time();
-//	InitADC();
+	InitADC();
+	InitDAC();
 	InitSCT();
 	InitTWI();
 
@@ -431,25 +516,24 @@ void InitHardware()
 
 void UpdateHardware()
 {
-	UpdateTWI();
-
 	HW::ResetWDT();
 
-	//static byte i = 0;
+	static byte i = 0;
 
-	//static TM32 tm;
+	static TM32 tm;
 
 
-	//#define CALL(p) case (__LINE__-S): p; break;
+	#define CALL(p) case (__LINE__-S): p; break;
 
-	//enum C { S = (__LINE__+3) };
-	//switch(i++)
-	//{
-	//	CALL( UpdateADC() );
-	//	CALL( UpdateTWI() );
-	//};
+	enum C { S = (__LINE__+3) };
+	switch(i++)
+	{
+		CALL( UpdateTWI() );
+		CALL( UpdateADC() );
+		CALL( UpdateDAC() );
+	};
 
-	//i = (i > (__LINE__-S-3)) ? 0 : i;
+	i = (i > (__LINE__-S-3)) ? 0 : i;
 }
 
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++

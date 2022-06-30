@@ -687,10 +687,8 @@ static bool CallBackMotoReq(Ptr<REQ> &q)
 
 		if (rsp.rw == 0x101)
 		{
-			//motoRPS = rsp.rpm;
-			//motoCur = rsp.current;
-			//motoStat = rsp.mororStatus;
-			//motoCounter = rsp.motoCounter;
+			curFireVoltage = rsp.curHV;
+
 			motoRcvCount++;
 		};
 	};
@@ -969,7 +967,7 @@ static void RequestFlashWrite_00(Ptr<UNIBUF> &flwb)
 
 	flwb->dataLen = InitRspMan_00(data) * 2;
 
-	RequestFlashWrite(flwb, data[0]);
+	RequestFlashWrite(flwb, data[0], true);
 }
 
 //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -1014,7 +1012,7 @@ static void RequestFlashWrite_10(Ptr<UNIBUF> &flwb)
 
 	flwb->dataLen = InitRspMan_10(data) * 2;
 
-	RequestFlashWrite(flwb, data[0]);
+	RequestFlashWrite(flwb, data[0], true);
 }
 
 //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -1080,7 +1078,7 @@ static void RequestFlashWrite_20(Ptr<UNIBUF> &flwb)
 
 	flwb->dataLen = InitRspMan_20(data) * 2;
 
-	RequestFlashWrite(flwb, data[0]);
+	RequestFlashWrite(flwb, data[0], true);
 }
 
 //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -1682,7 +1680,7 @@ static void MainMode()
 			{
 				rsp = (RspDsp30*)(rq->rsp->GetDataPtr());
 
-				RequestFlashWrite(rq->rsp, rsp->h.rw);
+				RequestFlashWrite(rq->rsp, rsp->h.rw, false);
 
 				mainModeState++;
 			};
@@ -2191,7 +2189,7 @@ static void UpdateTestFlashWrite()
 			count--;
 
 			RspDsp01 *rsp = (RspDsp01*)(ptr->GetDataPtr());
-			RequestFlashWrite(ptr, rsp->rw);
+			RequestFlashWrite(ptr, rsp->rw, true);
 
 		};
 	};
@@ -2210,11 +2208,11 @@ static void UpdateDSP()
 	{
 		case 0:
 
-			if ((mv.fireVoltage == 0 && motoTargetRPS == 1500) || __WIN32__)
-			{
-				if (FLASH_Status() != 0) UpdateTestFlashWrite();
-			}
-			else
+			//if ((mv.fireVoltage == 0 && motoTargetRPS == 1500) || __WIN32__)
+			//{
+			//	if (FLASH_Status() != 0) UpdateTestFlashWrite();
+			//}
+			//else
 			{
 				rq = CreateDspReq01(1);
 
@@ -2735,7 +2733,7 @@ static void UpdateParams()
 		CALL( UpdateAccel();			);
 		CALL( UpdateI2C();				);
 		CALL( SaveVars();				);
-		//CALL( UpdateMoto();				);
+		CALL( UpdateMoto();				);
 		CALL( UpdateDSP();				);
 	};
 
