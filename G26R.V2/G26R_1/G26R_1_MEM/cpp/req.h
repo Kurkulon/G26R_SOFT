@@ -24,7 +24,9 @@
 __packed struct ReqMoto
 {
 	u16 	rw;
-	u16 	reqHV; 
+	u16 	reqHV;
+	u16		freq;
+	u16		sampleTime;
 	u16 	crc;  
 };
 

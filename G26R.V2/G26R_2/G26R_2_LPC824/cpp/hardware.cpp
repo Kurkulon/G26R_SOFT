@@ -67,6 +67,11 @@
 u16 curHV = 0;
 u16 reqHV = 0;
 u32 fHV = 0;
+u16 freq = 500;
+u16 freqCLK = US2CLK(1);
+u16 sampleTime = US2CLK(500);
+byte chnl = 0;
+
 //u32 tachoCount = 0;
 //i32 shaftPos = 0;
 //
@@ -88,6 +93,37 @@ __packed struct  Cmd
 };
 
 static Cmd req;
+
+//++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+inline void SetPWM()
+{
+	HW::SCT->MATCHREL_L[0] = US2CLK(1);				// LIN=0; HIN=1; DIS=0;
+	HW::SCT->MATCHREL_L[1] = freqCLK + US2CLK(1);	// LIN=1; HIN=0; DIS=0;
+	HW::SCT->MATCHREL_L[2] = freqCLK*2 + US2CLK(1);	// LIN=0; HIN=0; DIS=0;
+	HW::SCT->MATCHREL_L[3] = US2CLK(7);				// LIN=0; HIN=0; DIS=1;
+	HW::SCT->MATCHREL_L[4] = sampleTime;			// LIN=0; HIN=0; DIS=0;
+}
+
+//++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+void SetFreq(u16 v)
+{
+	if (freq != v)
+	{
+		freq = v;
+		freqCLK = (MCK / 2000 + freq/2) / freq;
+	};
+}
+
+//++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+void SetSampleTime(u16 v)
+{
+	sampleTime = (MCK/1000000) * v + US2CLK(10);
+
+	SetPWM();
+}
 
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
@@ -141,6 +177,21 @@ extern "C" void SystemInit()
 
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
+static __irq void Handler_SCT()
+{
+	HW::SCT->EVFLAG = ~0;
+
+	chnl += 1;
+
+	if (chnl > 12) chnl = 0;
+
+	HW::GPIO->MASK0 = ~(A0|A1|A2|A3);
+	HW::GPIO->MPIN0 = chnl<<PIN_A0;
+
+}
+
+//++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
 static void InitSCT()
 {
 	using namespace HW;
@@ -150,16 +201,14 @@ static void InitSCT()
 	SCT->STATE_L = 0;
 	SCT->REGMODE_L = 0;
 
-	SCT->MATCH_L[0] = US2CLK(1);		// LIN=0; HIN=1; DIS=0;
-	SCT->MATCH_L[1] = US2CLK(1.9);	// LIN=1; HIN=0; DIS=0;
-	SCT->MATCH_L[2] = US2CLK(2.8);	// LIN=0; HIN=0; DIS=0;
-	//SCT->MATCH_L[5] = US2CLK(4.1249);	// LIN=1; HIN=0; DIS=0;
-	//SCT->MATCH_L[6] = US2CLK(5.1665);	// LIN=0; HIN=0; DIS=0;
-	SCT->MATCH_L[3] = US2CLK(7);		// LIN=0; HIN=0; DIS=1;
-	SCT->MATCH_L[4] = US2CLK(500);		// LIN=0; HIN=0; DIS=0;
+	SCT->MATCHREL_L[0] = US2CLK(1);				// LIN=0; HIN=1; DIS=0;
+	SCT->MATCHREL_L[1] = freqCLK + US2CLK(1);	// LIN=1; HIN=0; DIS=0;
+	SCT->MATCHREL_L[2] = freqCLK*2 + US2CLK(1);	// LIN=0; HIN=0; DIS=0;
+	SCT->MATCHREL_L[3] = US2CLK(7);				// LIN=0; HIN=0; DIS=1;
+	SCT->MATCHREL_L[4] = US2CLK(500);			// LIN=0; HIN=0; DIS=0;
 
-	SCT->OUT[0].SET = (1<<1);//|(1<<5);					// LIN
-	SCT->OUT[0].CLR = (1<<0)|(1<<2)|(1<<3)|(1<<4)/*|(1<<6)*/;
+	SCT->OUT[0].SET = (1<<1)|(1<<4);//|(1<<5);					// LIN
+	SCT->OUT[0].CLR = (1<<0)|(1<<2)|(1<<3)/*|(1<<6)*/;
 
 	SCT->OUT[1].SET = (1<<0);//|(1<<2);					// HIN
 	SCT->OUT[1].CLR = (1<<1)|(1<<3)|(1<<4)/*|(1<<5)|(1<<6)*/;
@@ -196,7 +245,7 @@ static void InitSCT()
 	SCT->HALT_L = 0;
 	SCT->LIMIT_L = (1<<4);
 
-	SCT->CONFIG = 1<<7; 
+	SCT->CONFIG = 0; 
 
 	SWM->CTOUT_0 = PIN_LIN;
 	SWM->CTOUT_1 = PIN_HIN;
@@ -209,12 +258,12 @@ static void InitSCT()
 	SCT->CTRL_L = (1<<3);//|(1<<2);
 
 
-	//VectorTableExt[SCT_IRQ] = Handler_SCT;
-	//CM0::NVIC->ICPR[0] = 1 << SCT_IRQ;
-	//CM0::NVIC->ISER[0] = 1 << SCT_IRQ;
+	VectorTableExt[SCT_IRQ] = Handler_SCT;
+	CM0::NVIC->ICPR[0] = 1 << SCT_IRQ;
+	CM0::NVIC->ISER[0] = 1 << SCT_IRQ;
 
-	//SCT->EVEN = 1<<3;
-	//SCT->EVFLAG = 1<<3;
+	SCT->EVEN = 1<<4;
+	SCT->EVFLAG = 1<<4;
 }
 
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -364,7 +413,7 @@ static void UpdateTWI()
 			if (twiRead)
 			{
 				HW::SCT->CTRL_L = 1<<2;
-				HW::SCT->OUTPUT = 0;
+				//HW::SCT->OUTPUT = 0;
 
 				//HW::SCT->OUTPUT = 1;
 
@@ -375,8 +424,10 @@ static void UpdateTWI()
 
 		case 1:
 
+			chnl = req.chnl;
+
 			HW::GPIO->MASK0 = ~(A0|A1|A2|A3);
-			HW::GPIO->MPIN0 = req.chnl<<PIN_A0;
+			HW::GPIO->MPIN0 = chnl<<PIN_A0;
 
 			i++;
 
@@ -384,7 +435,7 @@ static void UpdateTWI()
 
 		case 2:
 
-			HW::SCT->OUTPUT = 1;
+			//HW::SCT->OUTPUT = 1;
 			HW::SCT->CTRL_L = 1<<1;
 
 			twiRead = false;

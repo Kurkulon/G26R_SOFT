@@ -734,6 +734,8 @@ static Ptr<REQ> CreateMotoReq()
 	
 	req.rw = 0x101;
 	req.reqHV = mv.fireVoltage;
+	req.freq = mv.freq;
+	req.sampleTime = (mv.sampleLen * mv.sampleTime + mv.sampleDelay) / 20;
 
 	return &q;
 }

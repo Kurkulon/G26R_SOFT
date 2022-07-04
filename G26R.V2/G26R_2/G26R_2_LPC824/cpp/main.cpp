@@ -28,7 +28,9 @@ inline u16 ReverseWord(u16 v) { __asm	{ rev16 v, v };	return v; }
 __packed struct Req
 {
 	u16 	rw;
-	u16 	reqHV; 
+	u16 	reqHV;
+	u16		freq;
+	u16		sampleTime;
 	u16 	crc;  
 };
 
@@ -70,6 +72,8 @@ static bool RequestMan_10(u16 *data, u16 len, ComPort::WriteBuffer *wb)
 	Req *req = (Req*)data;
 
 	SetReqHV(req->reqHV);
+	SetFreq(req->freq);
+	SetSampleTime(req->sampleTime);
 
 	rsp.rw = manReqWord|1;	// 	1. ответное слово
 	rsp.curHV = GetCurHV();

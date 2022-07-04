@@ -12,6 +12,9 @@ extern void InitHardware();
 extern void UpdateHardware();
 extern u16 GetCRC(const void *data, u32 len);
 
+extern void SetFreq(u16 v);
+extern void SetSampleTime(u16 v);
+
 inline void SetReqHV(u16 v) { extern u16 reqHV; reqHV = v; }
 inline u16 GetCurHV() { extern u16 curHV; return curHV; }
 

@@ -125,6 +125,56 @@ static void UpdateFire()
 	{
 		case 0:
 
+			cmdreq.chnl = fnum;
+
+			WriteTWI(&cmdreq, sizeof(cmdreq));
+
+			count = 10;
+
+			i++;
+
+			break;
+
+		case 1:
+
+			if ((*pTWI_MASTER_CTL & MEN) == 0)
+			{
+				ReadTWI(&cmdrsp, sizeof(cmdrsp));
+
+				i++;
+			};
+
+			break;
+
+		case 2:
+
+			if ((*pTWI_MASTER_CTL & MEN) == 0)
+			{
+				if ((count--) == 0)
+				{
+					i = 1;
+				}
+				else
+				{
+					i = (cmdrsp.busy || !cmdrsp.ready) ? (i-1) : (i+1);
+				};
+
+				tm.Reset();
+			};
+
+			break;
+
+		case 3:
+
+			if (tm.Check(US2CCLK(50)))
+			{
+				i++;
+			};
+
+			break;
+
+		case 4:
+
 			rsp = freeRsp30.Get();
 
 			if (rsp != 0)
@@ -140,65 +190,26 @@ static void UpdateFire()
 
 			break;
 
-		case 1:
-
-			cmdreq.chnl = fnum;
-
-			WriteTWI(&cmdreq, sizeof(cmdreq));
-
-			count = 10;
-
-			i++;
-
-			break;
-
-		case 2:
-
-			if ((*pTWI_MASTER_CTL & MEN) == 0)
-			{
-				ReadTWI(&cmdrsp, sizeof(cmdrsp));
-
-				i++;
-			};
-
-			break;
-
-		case 3:
-
-			if ((*pTWI_MASTER_CTL & MEN) == 0)
-			{
-				if ((count--) == 0)
-				{
-					i = 1;
-				}
-				else
-				{
-					i = (cmdrsp.busy || !cmdrsp.ready) ? (i-1) : (i+1);
-				};
-			};
-
-			break;
-
-		case 4:
-
-			{
-				i32 d = (i32)sampleDelay - (i32)sampleTime*2;
-
-				if (d < 0) d = 0;
-
-				rsp->h.fnum = fnum;
-				rsp->h.st = sampleTime;
-				rsp->h.sl = sampleLen;
-				rsp->h.sd = sampleDelay;
-
-				ReadPPI(rsp->data, sampleLen + 8, sampleTime, d, &ready);
-			};
-
-			i++;
-
-			break;
-
 		case 5:
+		{
+			i32 d = (i32)sampleDelay - (i32)sampleTime*2;
+
+			if (d < 0) d = 0;
+
+			rsp->h.fnum = fnum;
+			rsp->h.st = sampleTime;
+			rsp->h.sl = sampleLen;
+			rsp->h.sd = sampleDelay;
+
+			ReadPPI(rsp->data, sampleLen + 8, sampleTime, d, &ready);
+
+			i++;
+
+			break;
+
+		};
+
+		case 6:
 
 			if (ready)
 			{
@@ -207,19 +218,21 @@ static void UpdateFire()
 
 				rsp = 0;
 
+				tm.Reset();
+
 				i++;
 			};
 
 			break;
 
-		case 6:
+		case 7:
 
 			if (tm.Check(US2CCLK(50)))
 			{
 				if (fnum < 12)
 				{
 					fnum += 1;
-					i = 0;
+					i = 4;
 				}
 				else
 				{
@@ -230,7 +243,7 @@ static void UpdateFire()
 
 			break;
 
-		case 7:
+		case 8:
 
 			if (tm2.Check(period))
 			{
