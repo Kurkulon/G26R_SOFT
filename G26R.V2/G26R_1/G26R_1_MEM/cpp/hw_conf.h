@@ -349,6 +349,14 @@
 
 	#define PIN_WE_CFG		PINGFG_DRVSTR 
 	#define PIN_RE_CFG		PINGFG_DRVSTR 
+	#define PIN_ALE_CFG		PINGFG_DRVSTR 
+	#define PIN_CLE_CFG		PINGFG_DRVSTR 
+
+	#define NAND_DELAY_WP()		{ delay(4);		}
+	#define NAND_DELAY_WH()		{ delay(4);		}
+	#define NAND_DELAY_RP()		{ delay(2);		}
+	#define NAND_DELAY_REH()	{ delay(2);		}
+	#define NAND_DELAY_WHR()	{ delay(10);	}
 
 	#define NAND_WE_PER		NS2CLK(60)-1	
 	#define NAND_WE_CC0		NS2CLK(30) 
@@ -942,8 +950,6 @@
 	#define SPI__BAUD2FDR(v) ((1024 - ((MCK + (v)/2) / (v) + 1) / 2) | DM(1))
 
 	#define SPI__TCSR (TDEN(1)|HPCMD(0))
-
-	static void delay(u32 cycles) { for(volatile u32 i = 0UL; i < cycles ;++i) { __nop(); }}
 
 #elif defined(WIN32) //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
