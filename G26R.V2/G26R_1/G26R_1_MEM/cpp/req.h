@@ -105,7 +105,6 @@ struct RspDsp30
 	struct Hdr 
 	{ 
 		u16 rw; 
-		u16 fnum; 
 		u16 gain; 
 		u16 st; 
 		u16 sl; 

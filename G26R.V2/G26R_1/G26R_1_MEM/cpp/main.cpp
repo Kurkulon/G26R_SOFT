@@ -18,11 +18,11 @@
 #include <conio.h>
 //#include <stdio.h>
 
-static const bool __WIN32__ = true;
+//static const bool __WIN32__ = true;
 
 #else
 
-static const bool __WIN32__ = false;
+//static const bool __WIN32__ = false;
 
 //#pragma diag_suppress 546,550,177
 
@@ -87,7 +87,7 @@ u32 i2cResetCount = 0;
 
 u16 manRcvData[10];
 u16 manTrmData[50];
-static u16 manTrmBaud = 0;
+static u16 manTrmBaud = 3;
 static u16 memTrmBaud = 0;
 
 u16 txbuf[128 + 512 + 16];
@@ -143,26 +143,26 @@ static u16 mode = 0;
 static TM32 imModeTimeout;
 
 //static u16 motoEnable = 0;		// двигатель включить или выключить
-static u16 motoTargetRPS = 0;		// заданные обороты двигателя
-static u16 motoRPS = 0;				// обороты двигателя, об/сек
-static u16 motoCur = 0;				// ток двигателя, мА
+//static u16 motoTargetRPS = 0;		// заданные обороты двигателя
+//static u16 motoRPS = 0;				// обороты двигателя, об/сек
+//static u16 motoCur = 0;				// ток двигателя, мА
 //static u16 motoStat = 0;			// статус двигателя: 0 - выкл, 1 - вкл
-static u16 motoCounter = 0;			// счётчик оборотов двигателя 1/6 оборота
+//static u16 motoCounter = 0;			// счётчик оборотов двигателя 1/6 оборота
 //static u16 cmSPR = 32;			// Количество волновых картин на оборот головки в режиме цементомера
 //static u16 imSPR = 100;			// Количество точек на оборот головки в режиме имиджера
 //static u16 *curSPR = &cmSPR;		// Количество импульсов излучателя на оборот в текущем режиме
-static u16 motoVoltage = 90;
+//static u16 motoVoltage = 90;
 static u16 motoRcvCount = 0;
 
 static u16 curFireVoltage = 500;
 
-static u32 dspMMSEC = 0;
-static u32 shaftMMSEC = 0;
+//static u32 dspMMSEC = 0;
+//static u32 shaftMMSEC = 0;
 
 const u16 dspReqWord = 0xA900;
 //const u16 dspReqMask = 0xFF00;
 
-static u16 manReqWord = 0xAD00;
+static u16 manReqWord = 0xA900;
 static u16 manReqMask = 0xFF00;
 
 static u16 memReqWord = 0x3D00;
@@ -184,9 +184,11 @@ static bool cmdWriteStart_00 = false;
 static bool cmdWriteStart_10 = false;
 static bool cmdWriteStart_20 = false;
 
-static u32 dspRcv40 = 0;
-static u32 dspRcv50 = 0;
+//static u32 dspRcv40 = 0;
+//static u32 dspRcv50 = 0;
 static u16 dspRcvCount = 0;
+static u16 dspRcv30 = 0;
+static u16 dspRcv01 = 0;
 
 
 //static u32 rcvCRCER = 0;
@@ -253,32 +255,6 @@ static void Update_RPS_SPR()
 
 //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
-static void SetModeCM()
-{
-	if (mode != 0)
-	{
-		mode = 0;
-
-		Update_RPS_SPR();
-	};
-}
-
-//+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-
-static void SetModeIM()
-{
-	if (mode == 0)
-	{
-		mode = 1;
-
-		Update_RPS_SPR();
-	};
-
-	imModeTimeout.Reset();
-}
-
-//+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-
 //static void Response_0(u16 rw, MTB &mtb)
 //{
 //	__packed struct Rsp {u16 rw; u16 device; u16 session; u32 rcvVec; u32 rejVec; u32 wrVec; u32 errVec; u16 wrAdr[3]; u16 numDevice; u16 version; u16 temp; byte status; byte flags; RTC rtc; };
@@ -313,16 +289,18 @@ bool CallBackDspReq01(Ptr<REQ> &q)
 	 
 	if (q->rb.recieved && q->crcOK)
 	{
-		if (rsp.rw == (dspReqWord|0x30))
+		if ((rsp.rw & ~15) == (dspReqWord|0x30))
 		{
 			q->rsp->dataLen = q->rb.len;
 
+			dspRcv30++;
 			dspRcvCount++;
 		}
 		else if (rsp.rw == (dspReqWord|1))
 		{
 			q->rsp->dataLen = 0;
 
+			dspRcv01++;
 			dspRcvCount++;
 		};
 	}
@@ -377,7 +355,7 @@ Ptr<REQ> CreateDspReq01(u16 tryCount)
 	//q.rb = &rb;
 	//q.wb = &wb;
 	q.preTimeOut = MS2COM(1);
-	q.postTimeOut = US2COM(50);
+	q.postTimeOut = US2COM(100);
 	q.ready = false;
 	q.tryCount = tryCount;
 	//q.ptr = &r;
@@ -999,9 +977,9 @@ static u32 InitRspMan_10(__packed u16 *data)
 	*(data++)	= mv.sampleTime;						//	3. Шаг оцифровки
 	*(data++)	= mv.sampleLen;							//	4. Длина оцифровки
 	*(data++)	= mv.sampleDelay; 						//	5. Задержка оцифровки
-	*(data++)	= mv.freq;								//	8. Частота излучателя(кГц)
+	//*(data++)	= mv.freq;								//	8. Частота излучателя(кГц)
 	*(data++)	= mv.filtrType;							//	16. Фильтр
-	*(data++)	= mv.fireVoltage;						//	20. Напряжение излучателя(В)
+	//*(data++)	= mv.fireVoltage;						//	20. Напряжение излучателя(В)
 
 	return data - start;
 }
@@ -1040,34 +1018,26 @@ static u32 InitRspMan_20(__packed u16 *data)
 	__packed u16 *start = data;
 
 	*(data++)	= manReqWord|0x20;				//	1. ответное слово	
-	*(data++)	= dspMMSEC; 					//	2. Время(0.1мс).младшие 2 байта
-	*(data++)	= dspMMSEC>>16;					//	3. Время.старшие 2 байта
-	*(data++)  	= shaftMMSEC;					//	4. Время датчика Холла(0.1мс).младшие 2 байта
-	*(data++)  	= shaftMMSEC>>16;				//	5. Время датчика Холла.старшие 2 байта
-	*(data++)  	= motoRPS;						//	6. Частота вращения двигателя(0.01 об / сек)
-	*(data++)  	= motoCur;						//	7. Ток двигателя(мА)
-	*(data++)  	= motoCounter;					//	8. Счётчик оборотов двигателя(1 / 6 об)
-	*(data++)  	= 0;							//	9. Частота вращения головки(0.01 об / сек)
-	*(data++)  	= 0;							//	10. Счётчик оборотов головки(об)
+	*(data++)	= dspRcvCount;					//	27. Счётчик запросов DSP
+	*(data++)	= motoRcvCount;					//	28. Счётчик запросов двигателя
+	*(data++)	= 0;							//	24. Состояние датчика Холла(0, 1)
 	*(data++)  	= ax;							//	11. AX(уе)
 	*(data++)  	= ay;							//	12. AY(уе)
 	*(data++)  	= az;							//	13. AZ(уе)
 	*(data++)  	= at;							//	14. AT(short 0.01 гр)
-	*(data++)	= temp;							//	15. Температура в приборе(short)(0.1гр)
-	//*(data++)	= sensMinMax[0].ampMax;			//	16. Амплитуда измерительного датчика максимум по всей волне(у.е)
-	//*(data++)	= sensMinMax[0].ampMin;			//	17. Амплитуда измерительного датчика минимум по всей волне(у.е)
-	//*(data++)	= sensMinMax[0].timeMax;		//	18. Время измерительного датчика максимум по первому вступлению(0.05 мкс)
-	//*(data++)	= sensMinMax[0].timeMin;		//	19. Время измерительного датчика минимум по первому вступлению(0.05 мкс)
-	//*(data++)	= sensMinMax[1].ampMax;			//	20. Амплитуда опорного датчика максимум по всей волне(у.е)
-	//*(data++)	= sensMinMax[1].ampMin;			//	21. Амплитуда опорного датчика минимум по всей волне(у.е)
-	//*(data++)	= sensMinMax[1].timeMax;		//	22. Время опорного датчика максимум по первому вступлению(0.05 мкс)
-	//*(data++)	= sensMinMax[1].timeMin;		//	23. Время опорного датчика минимум по первому вступлению(0.05 мкс)
-	*(data++)	= 0;							//	24. Состояние датчика Холла(0, 1)
-	*(data++)	= curFireVoltage;				//	25. Напряжение излучателя(В)
-	*(data++)	= motoVoltage;					//	26. Напряжение двигателя(В)
-	*(data++)	= dspRcvCount;					//	27. Счётчик запросов DSP
-	*(data++)	= motoRcvCount;					//	28. Счётчик запросов двигателя
-	*(data++)	= GetRcvManQuality();			//	29. Качество сигнала запроса телеметрии (%)
+	//*(data++)	= dspMMSEC; 					//	2. Время(0.1мс).младшие 2 байта
+	//*(data++)	= dspMMSEC>>16;					//	3. Время.старшие 2 байта
+	//*(data++)  	= shaftMMSEC;					//	4. Время датчика Холла(0.1мс).младшие 2 байта
+	//*(data++)  	= shaftMMSEC>>16;				//	5. Время датчика Холла.старшие 2 байта
+	//*(data++)  	= motoRPS;						//	6. Частота вращения двигателя(0.01 об / сек)
+	//*(data++)  	= motoCur;						//	7. Ток двигателя(мА)
+	//*(data++)  	= motoCounter;					//	8. Счётчик оборотов двигателя(1 / 6 об)
+	//*(data++)  	= 0;							//	9. Частота вращения головки(0.01 об / сек)
+	//*(data++)  	= 0;							//	10. Счётчик оборотов головки(об)
+	//*(data++)	= temp;							//	15. Температура в приборе(short)(0.1гр)
+	//*(data++)	= curFireVoltage;				//	25. Напряжение излучателя(В)
+	//*(data++)	= motoVoltage;					//	26. Напряжение двигателя(В)
+	//*(data++)	= GetRcvManQuality();			//	29. Качество сигнала запроса телеметрии (%)
 
 	return data - start;
 }
@@ -1137,7 +1107,7 @@ static bool RequestMan_30(u16 *data, u16 reqlen, MTB* mtb)
 	static u16 prevLen = 0;
 	static u16 maxLen = 200;
 
-	static byte sensInd = 0;
+	byte sensInd = req.rw & 15;
 
 	rsp.rw = req.rw;
 
@@ -1152,13 +1122,13 @@ static bool RequestMan_30(u16 *data, u16 reqlen, MTB* mtb)
 
 	if (reqlen == 1 || (reqlen >= 2 && data[1] == 0))
 	{
-		curManVec30 = manVec30[sensInd&1];
+		curManVec30 = manVec30[sensInd];
 
 		if (curManVec30.Valid())
 		{
 			RspDsp30 &rsp = *((RspDsp30*)(curManVec30->GetDataPtr()));
 
-			u16 sz = sizeof(rsp.h)/2 + rsp.h.sl;
+			u16 sz = sizeof(rsp.h)/2 + rsp.h.sl - 1;
 
 			mtb->data2 = ((u16*)&rsp)+1;
 
@@ -1185,7 +1155,7 @@ static bool RequestMan_30(u16 *data, u16 reqlen, MTB* mtb)
 			};
 		};
 
-		sensInd = (sensInd + 1) & 1;
+		//sensInd = (sensInd + 1) & 1;
 	}
 	else if (curManVec30.Valid())
 	{
@@ -1202,7 +1172,7 @@ static bool RequestMan_30(u16 *data, u16 reqlen, MTB* mtb)
 			len = data[2];
 		};
 
-		u16 sz = sizeof(rsp.h)/2 + rsp.h.sl;
+		u16 sz = sizeof(rsp.h)/2 + rsp.h.sl - 1;
 
 		if (sz >= off)
 		{
@@ -1692,7 +1662,7 @@ static void MainMode()
 		case 1:
 		{
 
-			byte n = rsp->h.fnum;
+			byte n = rsp->h.rw & 15;
 
 			manVec30[n] = rq->rsp;
 

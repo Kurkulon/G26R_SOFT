@@ -20,7 +20,8 @@ static ComPort com;
 
 //static byte twiBuffer[14] = {0x11,0x22,0x33,0x44,0x55,0x66,0x77,0x88,0x99,0xAA,0xBB,0xCC,0xDD,0xEE};
 
-struct Rsp30 { Rsp30 *next; struct Hdr { u16 rw; u16 fnum; u16 gain; u16 st; u16 sl; u16 sd; u16 flt; } h; u16 data[1024+32]; };
+//struct Rsp30 { Rsp30 *next; struct Hdr { u16 rw; u16 fnum; u16 gain; u16 st; u16 sl; u16 sd; u16 flt; } h; u16 data[1024+32]; };
+struct Rsp30 { Rsp30 *next; struct Hdr { u16 rw; u16 gain; u16 st; u16 sl; u16 sd; u16 flt; } h; u16 data[1024+32]; };
 
 #pragma instantiate List<Rsp30>
 static List<Rsp30> freeRsp30;
@@ -196,10 +197,11 @@ static void UpdateFire()
 
 			if (d < 0) d = 0;
 
-			rsp->h.fnum = fnum;
+			rsp->h.rw = manReqWord|0x30|fnum;
 			rsp->h.st = sampleTime;
 			rsp->h.sl = sampleLen;
 			rsp->h.sd = sampleDelay;
+			rsp->h.flt = 0;
 
 			ReadPPI(rsp->data, sampleLen + 8, sampleTime, d, &ready);
 
@@ -278,9 +280,6 @@ static void ProcessData()
 					*p = p[8] - 2048;
 					p++;
 				};
-
-				rsp->h.rw = manReqWord|0x30;
-				rsp->h.flt = 0;
 
 				i++;
 			};
