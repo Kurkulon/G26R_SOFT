@@ -973,7 +973,7 @@ static u32 InitRspMan_10(__packed u16 *data)
 	__packed u16 *start = data;
 
 	*(data++)	= (manReqWord & manReqMask) | 0x10;		//	1. Ответное слово	
-	*(data++)	= mv.gain;								//	2. КУ(измерительный датчик)
+	*(data++)	= mv.gain + mv.fireVoltage;				//	2. КУ(измерительный датчик)
 	*(data++)	= mv.sampleTime;						//	3. Шаг оцифровки
 	*(data++)	= mv.sampleLen;							//	4. Длина оцифровки
 	*(data++)	= mv.sampleDelay; 						//	5. Задержка оцифровки
@@ -1020,7 +1020,7 @@ static u32 InitRspMan_20(__packed u16 *data)
 	*(data++)	= manReqWord|0x20;				//	1. ответное слово	
 	*(data++)	= dspRcvCount;					//	27. Счётчик запросов DSP
 	*(data++)	= motoRcvCount;					//	28. Счётчик запросов двигателя
-	*(data++)	= 0;							//	24. Состояние датчика Холла(0, 1)
+	*(data++)	= curFireVoltage;				//	24. Состояние датчика Холла(0, 1)
 	*(data++)  	= ax;							//	11. AX(уе)
 	*(data++)  	= ay;							//	12. AY(уе)
 	*(data++)  	= az;							//	13. AZ(уе)
@@ -1229,7 +1229,7 @@ static bool RequestMan_90(u16 *data, u16 len, MTB* mtb)
 
 	switch(data[1])
 	{
-		case 0x1:	mv.gain				= data[2];			break;
+		case 0x1:	mv.gain	= data[2] % 10; mv.fireVoltage = data[2] - data[2] % 10;		break;
 		case 0x2:	mv.sampleTime		= data[2];			break;
 		case 0x3:	mv.sampleLen		= data[2];			break;
 		case 0x4:	mv.sampleDelay 		= data[2];			break;
@@ -2321,7 +2321,7 @@ static void FlashDSP()
 
 		tm.Reset();
 
-		while (!tm.Check(10)) HW::WDT->Update();
+		while (!tm.Check(50)) HW::WDT->Update();
 
 		req = CreateDspReq07();
 
