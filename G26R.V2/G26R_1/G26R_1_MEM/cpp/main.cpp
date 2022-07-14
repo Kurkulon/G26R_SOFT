@@ -12,6 +12,7 @@
 #include "SEGGER_RTT.h"
 #include "hw_conf.h"
 #include "hw_com.h"
+#include "at25df021.h"
 
 #ifdef WIN32
 
@@ -2335,6 +2336,33 @@ static void FlashDSP()
 
 //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
+static void FlashDSP_Direct()
+{
+	u16 flen;
+	const u32 *fpages;
+	u16 flashCRC;
+	u16 flashLen;
+	u32 startAdr;
+
+	at25df021_Init(5000000);
+
+	BlackFin_CheckFlash(&flashCRC, &flashLen);
+
+	flen = sizeof(dspFlashPages);
+	fpages = dspFlashPages;
+
+	u16 fcrc = GetCRC16(fpages, flen);
+
+	if (flashCRC != fcrc || flashLen != flen)
+	{
+		at25df021_Write((byte*)fpages, 0, flen, true);
+	};
+
+	at25df021_Destroy();
+}
+
+//+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
 static const u32 motoFlashPages[] = {
 #include "G26R_2_LPC824.BIN.H"
 };
@@ -2401,7 +2429,7 @@ static void FlashMoto()
 
 	if (hs)
 	{
-		while (!tm.Check(10))
+		while (!tm.Check(10)) HW::WDT->Update();
 
 		req = CreateBootMotoReq01(motoFlashLen, 2);
 
@@ -2794,7 +2822,7 @@ int main()
 
 	TM32 tm;
 
-	//__breakpoint(0);
+	__breakpoint(0);
 
 #ifndef WIN32
 
@@ -2843,7 +2871,7 @@ int main()
 
 	FlashMoto();
 
-	FlashDSP();
+	FlashDSP_Direct();
 
 //	comdsp.Disconnect();
 
