@@ -78,6 +78,7 @@ struct ReqDsp01	// чтение вектора
 {
 	u16 	rw;
 
+	u16		repeatResponse;
 	u16		gain; 
 	u16		sampleTime; 
 	u16		sampleLen; 

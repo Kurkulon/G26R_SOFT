@@ -333,7 +333,7 @@ bool CallBackDspReq01(Ptr<REQ> &q)
 
 //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
-Ptr<REQ> CreateDspReq01(u16 tryCount)
+Ptr<REQ> CreateDspReq01(bool repeat, u16 tryCount)
 {
 	Ptr<REQ> rq;
 	
@@ -371,13 +371,14 @@ Ptr<REQ> CreateDspReq01(u16 tryCount)
 	q.rb.maxLen = sizeof(rsp);
 	q.rb.recieved = false;
 	
-	req.rw = dspReqWord|1;
-	req.gain = mv.gain;
-	req.sampleTime = mv.sampleTime; 
-	req.sampleLen = mv.sampleLen; 
-	req.sampleDelay = mv.sampleDelay; 
-	req.flt = mv.filtrType;
-	req.firePeriod = mv.firePeriod; //ms
+	req.rw				= dspReqWord|1;
+	req.gain			= mv.gain;
+	req.sampleTime		= mv.sampleTime; 
+	req.sampleLen		= mv.sampleLen; 
+	req.sampleDelay 	= mv.sampleDelay; 
+	req.flt				= mv.filtrType;
+	req.firePeriod		= mv.firePeriod; //ms
+	req.repeatResponse	= (repeat) ? ~0 : 0;
 
 	return rq;
 }
@@ -2177,6 +2178,8 @@ static void UpdateDSP()
 	static byte i = 0;
 //	static TM32 tm;
 
+	static bool repeat = false;
+
 	switch (i)
 	{
 		case 0:
@@ -2187,7 +2190,7 @@ static void UpdateDSP()
 			//}
 			//else
 			{
-				rq = CreateDspReq01(1);
+				rq = CreateDspReq01(repeat, 0);
 
 				if (rq.Valid())	qdsp.Add(rq), i++;
 			};
@@ -2198,6 +2201,8 @@ static void UpdateDSP()
 
 			if (rq->ready)
 			{
+				repeat = !rq->crcOK;
+
 				if (rq->crcOK && rq->rsp->dataLen != 0)
 				{
 					readyR01.Add(rq);
@@ -2346,10 +2351,12 @@ static void FlashDSP_Direct()
 
 	at25df021_Init(5000000);
 
-	BlackFin_CheckFlash(&flashCRC, &flashLen);
-
 	flen = sizeof(dspFlashPages);
 	fpages = dspFlashPages;
+
+	BlackFin_CheckFlash(&flashCRC, &flashLen);
+
+	//flashCRC = at25df021_GetCRC16(flen);
 
 	u16 fcrc = GetCRC16(fpages, flen);
 
@@ -2359,6 +2366,8 @@ static void FlashDSP_Direct()
 	};
 
 	at25df021_Destroy();
+
+	EnableDSP();
 }
 
 //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -2822,7 +2831,7 @@ int main()
 
 	TM32 tm;
 
-	__breakpoint(0);
+	//__breakpoint(0);
 
 #ifndef WIN32
 
@@ -2903,8 +2912,6 @@ int main()
 		FPS_PIN_CLR();
 
 		fc++;
-
-		//commem.Update();
 
 		if (tm.Check(1000))
 		{ 

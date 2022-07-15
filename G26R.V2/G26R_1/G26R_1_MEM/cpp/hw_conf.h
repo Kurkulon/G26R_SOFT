@@ -64,11 +64,13 @@
 	#define GEN_25M				2
 	#define GEN_1M				3
 	//#define GEN_500K			4
+	#define GEN_EXT32K			5
 
 	#define GEN_MCK_CLK			MCK
 	#define GEN_32K_CLK			32768
 	#define GEN_25M_CLK			25000000
 	#define GEN_1M_CLK			1000000
+	#define GEN_EXT32K_CLK		32768
 
 	// ++++++++++++++	SERCOM	++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
@@ -463,11 +465,13 @@
 
 	// ++++++++++++++	CLOCK	++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
-	#define CLOCK_EXTINT	7
-	#define CLOCK_IRQ		(EIC_0_IRQ+CLOCK_EXTINT)
-	#define PIO_RTC			HW::PIOB
-	#define PIN_RTCINT		23 
+	#define PIO_RTC			HW::PIOC
+	#define PIN_RTCINT		25 
 	#define RTCINT			(1UL<<PIN_RTCINT)
+	#define PIO_32kHz		HW::PIOB 
+	#define PIN_32kHz		19 
+	#define CLOCK_EXTINT	(PIN_RTCINT & 15)
+	#define CLOCK_IRQ		(EIC_0_IRQ+CLOCK_EXTINT)
 
 
 #elif defined(CPU_XMC48) //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++

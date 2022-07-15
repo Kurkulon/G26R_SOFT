@@ -658,7 +658,7 @@ static bool HandShake()
 
 	u32 rcause = HW::RSTC->RCAUSE;
 
-	bool bootCheck = rcause & (RSTC_NVM|RSTC_WDT|RSTC_BACKUP);
+	bool bootCheck = true;//rcause & (RSTC_NVM|RSTC_WDT|RSTC_BACKUP);
 
 	SEGGER_RTT_printf(0, RTT_CTRL_TEXT_WHITE "HW::RSTC->RCAUSE = 0x%02X\n", rcause);
 

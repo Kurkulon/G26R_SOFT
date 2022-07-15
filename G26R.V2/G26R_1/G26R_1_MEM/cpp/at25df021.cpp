@@ -331,11 +331,12 @@ ERROR_CODE at25df021_Read(void *data, u32 stAdr, u16 count )
 
 //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
-u16 at25df021_GetCRC16(u32 stAdr, u16 count)
+u16 at25df021_GetCRC16(u16 count)
 {
 	DataCRC crc;
-
 	crc.w = 0xFFFF;
+
+	u32 stAdr = FLASH_START_ADR;
 
 	byte t = 0;
 
@@ -447,11 +448,11 @@ bool BlackFin_CheckFlash(u16 *pcrc, u16 *plen)
 
 	flashLen = adr;
 
-	at25df021_Read(&crc, FLASH_START_ADR + adr, sizeof(crc));
+	//at25df021_Read(&crc, FLASH_START_ADR + adr, sizeof(crc));
 
-	if (flashLen > 0) flashCRC = at25df021_GetCRC16(FLASH_START_ADR, flashLen), flashCRCOK = (flashCRC == crc);
+	if (flashLen > 0) flashCRC = at25df021_GetCRC16(flashLen);//, flashCRCOK = (flashCRC == crc);
 
-	if (!flashCRCOK) flashLen = 0;
+	//if (!flashCRCOK) flashLen = 0;
 
 	flashChecked = true;
 

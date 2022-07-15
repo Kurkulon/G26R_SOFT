@@ -316,14 +316,15 @@ static bool RequestMan_01(u16 *data, u16 len, ComPort::WriteBuffer *wb)
 
 	if (wb == 0) return false;
 
-	if (curRsp30 != 0)
+	if (req->repeatResponse == 0)
 	{
-		freeRsp30.Add(curRsp30);
+		if (curRsp30 != 0)
+		{
+			freeRsp30.Add(curRsp30);
+		};
 
-		curRsp30 = 0;
+		curRsp30 = readyRsp30.Get();
 	};
-
-	curRsp30 = readyRsp30.Get();
 
 	if (curRsp30 == 0)
 	{
