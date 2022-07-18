@@ -86,8 +86,8 @@ struct ReqDsp01	// чтение вектора
 	u16		sampleTime; 
 	u16		sampleLen; 
 	u16		sampleDelay; 
-	u16		flt;
 	u16		firePeriod; //ms
+	u16		verDevice;
 
 	u16 	crc;  
 };

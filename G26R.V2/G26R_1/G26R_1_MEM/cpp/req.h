@@ -83,8 +83,8 @@ struct ReqDsp01	// чтение вектора
 	u16		sampleTime; 
 	u16		sampleLen; 
 	u16		sampleDelay; 
-	u16		flt;
 	u16		firePeriod; //ms
+	u16		verDevice;
 
 	u16 	crc;  
 };
@@ -105,12 +105,12 @@ struct RspDsp30
 { 
 	struct Hdr 
 	{ 
-		u16 rw; 
+		u16 rw;
+		u16 verDevice;
 		u16 gain; 
 		u16 st; 
 		u16 sl; 
 		u16 sd; 
-		u16 flt; 
 	} h; 
 	u16 data[1024+32]; 
 };

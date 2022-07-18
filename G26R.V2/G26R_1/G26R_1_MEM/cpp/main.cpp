@@ -29,7 +29,7 @@
 
 #endif
 
-enum { VERSION = 0x103 };
+enum { VERSION = 0x200 };
 
 //#pragma O3
 //#pragma Otime
@@ -53,7 +53,6 @@ __packed struct MainVars // NonVolatileVars
 	u16 sampleTime;
 	u16 sampleLen;
 	u16 sampleDelay;
-	u16 filtrType;
 	u16 firePeriod;
 	u16 freq;
 
@@ -166,7 +165,7 @@ const u16 dspReqWord = 0xA900;
 static u16 manReqWord = 0xA900;
 static u16 manReqMask = 0xFF00;
 
-static u16 memReqWord = 0x3D00;
+static u16 memReqWord = 0x3E00;
 static u16 memReqMask = 0xFF00;
 
 //static u16 numDevice = 0;
@@ -376,8 +375,8 @@ Ptr<REQ> CreateDspReq01(bool repeat, u16 tryCount)
 	req.sampleTime		= mv.sampleTime; 
 	req.sampleLen		= mv.sampleLen; 
 	req.sampleDelay 	= mv.sampleDelay; 
-	req.flt				= mv.filtrType;
 	req.firePeriod		= mv.firePeriod; //ms
+	req.verDevice		= verDevice;
 	req.repeatResponse	= (repeat) ? ~0 : 0;
 
 	return rq;
@@ -974,14 +973,14 @@ static u32 InitRspMan_10(__packed u16 *data)
 {
 	__packed u16 *start = data;
 
-	*(data++)	= (manReqWord & manReqMask) | 0x10;		//	1. Ответное слово	
-	*(data++)	= mv.gain + mv.fireVoltage;				//	2. КУ(измерительный датчик)
+	*(data++)	= (manReqWord & manReqMask) | 0x10;		//	1. ответное слово
+	*(data++)	= mv.gain;								//	2. КУ
 	*(data++)	= mv.sampleTime;						//	3. Шаг оцифровки
 	*(data++)	= mv.sampleLen;							//	4. Длина оцифровки
 	*(data++)	= mv.sampleDelay; 						//	5. Задержка оцифровки
-	//*(data++)	= mv.freq;								//	8. Частота излучателя(кГц)
-	*(data++)	= mv.filtrType;							//	16. Фильтр
-	//*(data++)	= mv.fireVoltage;						//	20. Напряжение излучателя(В)
+	*(data++)	= mv.freq;								//	6. Частота излучателя (кГц) 100...1000
+	*(data++)	= mv.fireVoltage;						//	7. Напряжение излучателя
+	*(data++)	= mv.firePeriod;						//	8. Период опроса(мс)(ushort)
 
 	return data - start;
 }
@@ -1019,27 +1018,17 @@ static u32 InitRspMan_20(__packed u16 *data)
 {
 	__packed u16 *start = data;
 
-	*(data++)	= manReqWord|0x20;				//	1. ответное слово	
-	*(data++)	= dspRcvCount;					//	27. Счётчик запросов DSP
-	*(data++)	= motoRcvCount;					//	28. Счётчик запросов двигателя
-	*(data++)	= curFireVoltage;				//	24. Состояние датчика Холла(0, 1)
-	*(data++)  	= ax;							//	11. AX(уе)
-	*(data++)  	= ay;							//	12. AY(уе)
-	*(data++)  	= az;							//	13. AZ(уе)
-	*(data++)  	= at;							//	14. AT(short 0.01 гр)
-	//*(data++)	= dspMMSEC; 					//	2. Время(0.1мс).младшие 2 байта
-	//*(data++)	= dspMMSEC>>16;					//	3. Время.старшие 2 байта
-	//*(data++)  	= shaftMMSEC;					//	4. Время датчика Холла(0.1мс).младшие 2 байта
-	//*(data++)  	= shaftMMSEC>>16;				//	5. Время датчика Холла.старшие 2 байта
-	//*(data++)  	= motoRPS;						//	6. Частота вращения двигателя(0.01 об / сек)
-	//*(data++)  	= motoCur;						//	7. Ток двигателя(мА)
-	//*(data++)  	= motoCounter;					//	8. Счётчик оборотов двигателя(1 / 6 об)
-	//*(data++)  	= 0;							//	9. Частота вращения головки(0.01 об / сек)
-	//*(data++)  	= 0;							//	10. Счётчик оборотов головки(об)
-	//*(data++)	= temp;							//	15. Температура в приборе(short)(0.1гр)
-	//*(data++)	= curFireVoltage;				//	25. Напряжение излучателя(В)
-	//*(data++)	= motoVoltage;					//	26. Напряжение двигателя(В)
-	//*(data++)	= GetRcvManQuality();			//	29. Качество сигнала запроса телеметрии (%)
+	*(data++)	= manReqWord|0x20;				//	1. ответное слово
+	*(data++)	= verDevice;					//	2. Версия ПО
+	*(data++)	= ax;							//	3. AX (уе)
+	*(data++)	= ay;							//	4. AY (уе)
+	*(data++)  	= az;							//	5. AZ (уе)
+	*(data++)  	= at;							//	6. AT (short 0.01 гр)
+	*(data++)  	= temp;							//	7. Температура в приборе (short)(0.1гр)
+	*(data++)  	= curFireVoltage;							//	8. Напряжение излучателя (В)
+	*(data++)	= dspRcvCount; 					//	9. Счётчик запросов DSP
+	*(data++)	= motoRcvCount;					//	10. Счётчик запросов излучателя
+	*(data++)  	= GetRcvManQuality();			//	11. Качество сигнала запроса телеметрии (%)	
 
 	return data - start;
 }
@@ -1061,22 +1050,7 @@ static bool RequestMan_20(u16 *data, u16 len, MTB* mtb)
 {
 	if (data == 0 || len == 0 || len > 2 || mtb == 0) return false;
 
-	//if (sensMinMaxTemp[0].valid) { sensMinMax[0] = sensMinMaxTemp[0]; };
-	//if (sensMinMaxTemp[1].valid) { sensMinMax[1] = sensMinMaxTemp[1]; };
-
 	len = InitRspMan_20(manTrmData);
-
-	//sensMinMaxTemp[0].ampMax = 0;
-	//sensMinMaxTemp[0].ampMin = ~0;
-	//sensMinMaxTemp[0].timeMax = 0;
-	//sensMinMaxTemp[0].timeMin = ~0;
-	//sensMinMaxTemp[0].valid = false;
-
-	//sensMinMaxTemp[1].ampMax = 0;
-	//sensMinMaxTemp[1].ampMin = ~0;
-	//sensMinMaxTemp[1].timeMax = 0;
-	//sensMinMaxTemp[1].timeMin = ~0;
-	//sensMinMaxTemp[1].valid = false;
 
 	mtb->data1 = manTrmData;
 	mtb->len1 = len;
@@ -1247,7 +1221,7 @@ static bool RequestMan_90(u16 *data, u16 len, MTB* mtb)
 		//case 0x16:	mv.descriminantRef	= data[2];			break;
 		//case 0x17:	mv.refFreq			= data[2];			break;
 
-		case 0x20:	mv.filtrType		= data[2];			break;
+		//case 0x20:	mv.filtrType		= data[2];			break;
 		//case 0x21:	mv.packType			= data[2];			break;
 
 		//case 0x30:	mv.cmSPR 			= data[2]; Update_RPS_SPR();	break;
@@ -2502,7 +2476,6 @@ static void InitMainVars()
 	mv.sampleLen		= 500; 
 	mv.sampleDelay 		= 400; 
 	mv.freq				= 500; 
-	mv.filtrType		= 0;
 	mv.firePeriod		= 100;
 	mv.fireVoltage		= 500;
 }
