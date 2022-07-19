@@ -1205,31 +1205,13 @@ static bool RequestMan_90(u16 *data, u16 len, MTB* mtb)
 
 	switch(data[1])
 	{
-		case 0x1:	mv.gain	= data[2] % 10; mv.fireVoltage = data[2] - data[2] % 10;		break;
-		case 0x2:	mv.sampleTime		= data[2];			break;
-		case 0x3:	mv.sampleLen		= data[2];			break;
-		case 0x4:	mv.sampleDelay 		= data[2];			break;
-		//case 0x5:	mv.deadTime			= data[2];			break;
-		//case 0x6:	mv.descriminant		= data[2];			break;
-		case 0x7:	mv.freq				= data[2];			break;
-
-		//case 0x11:	mv.gainRef			= data[2];			break;
-		//case 0x12:	mv.sampleTimeRef	= data[2];			break;
-		//case 0x13:	mv.sampleLenRef		= data[2];			break;
-		//case 0x14:	mv.sampleDelayRef 	= data[2];			break;
-		//case 0x15:	mv.deadTimeRef		= data[2];			break;
-		//case 0x16:	mv.descriminantRef	= data[2];			break;
-		//case 0x17:	mv.refFreq			= data[2];			break;
-
-		//case 0x20:	mv.filtrType		= data[2];			break;
-		//case 0x21:	mv.packType			= data[2];			break;
-
-		//case 0x30:	mv.cmSPR 			= data[2]; Update_RPS_SPR();	break;
-		//case 0x31:	mv.imSPR 			= data[2]; Update_RPS_SPR();	break;
-
-		case 0x40:	mv.fireVoltage		= data[2];			break;
-		//case 0x41:	mv.motoLimCur		= data[2];			break;
-		//case 0x42:	mv.motoMaxCur		= data[2];			break;
+		case 0x1:	mv.gain				= MIN(data[2], 7);			break;
+		case 0x2:	mv.sampleTime		= LIM(data[2], 1, 1*20);	break;
+		case 0x3:	mv.sampleLen		= LIM(data[2], 16, 1024);	break;
+		case 0x4:	mv.sampleDelay 		= MIN(data[2], 500*20);		break;
+		case 0x5:	mv.freq				= LIM(data[2], 100, 1000);	break;
+		case 0x6:	mv.fireVoltage		= MIN(data[2], 500);		break;
+		case 0x7:	mv.firePeriod		= LIM(data[2], 50, 1000);	break;
 
 		default:
 
