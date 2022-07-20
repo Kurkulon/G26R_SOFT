@@ -145,7 +145,7 @@ static bool HW_EMAC_Init()
 			break; /* Reset complete */
 		};
 
-		HW::WDT->Update();
+		ResetWDT();
 	};
 
 	WritePHY(PHY_REG_BMCR,		BMCR_ANENABLE|BMCR_FULLDPLX);

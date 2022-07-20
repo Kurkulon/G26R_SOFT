@@ -87,7 +87,7 @@ u32 i2cResetCount = 0;
 
 u16 manRcvData[10];
 u16 manTrmData[50];
-static u16 manTrmBaud = 3;
+static u16 manTrmBaud = 0;
 static u16 memTrmBaud = 0;
 
 u16 txbuf[128 + 512 + 16];
@@ -1668,7 +1668,7 @@ static void MainMode()
 			}
 			else if (tm.Check(1001))
 			{
-				//cmdWriteStart_20 = true;
+				cmdWriteStart_20 = true;
 			};
 
 			mainModeState = 0;
@@ -1891,7 +1891,7 @@ static void UpdateTemp()
 			if (tm.Check(100))
 			{
 #ifndef WIN32
-				if (!__debug) { HW::WDT->Update(); };
+				if (!__debug) { HW::ResetWDT(); };
 #endif
 
 				buf[0] = 0x11;
@@ -2205,7 +2205,7 @@ static void FlashDSP()
 
 	while (!req.Valid()) req = CreateDspReq05(50);
 
-	qdsp.Add(req); while(!req->ready) { qdsp.Update(); HW::WDT->Update(); };
+	qdsp.Add(req); while(!req->ready) { qdsp.Update(); HW::ResetWDT(); };
 
 	//tm.Reset();
 
@@ -2273,7 +2273,7 @@ static void FlashDSP()
 					};
 				};
 
-				qdsp.Add(req); while(!req->ready) { qdsp.Update(); HW::WDT->Update(); };
+				qdsp.Add(req); while(!req->ready) { qdsp.Update(); HW::ResetWDT(); };
 
 				count -= len;
 				p += len;
@@ -2283,15 +2283,15 @@ static void FlashDSP()
 
 		tm.Reset();
 
-		while (!tm.Check(50)) HW::WDT->Update();
+		while (!tm.Check(50)) HW::ResetWDT();
 
 		req = CreateDspReq07();
 
-		qdsp.Add(req); while(!req->ready) { qdsp.Update();	};
+		qdsp.Add(req); while(!req->ready) { qdsp.Update(); HW::ResetWDT();	};
 
 		tm.Reset();
 
-		while (!tm.Check(50)) HW::WDT->Update();
+		while (!tm.Check(50)) HW::ResetWDT();
 	};
 }
 
@@ -2374,13 +2374,13 @@ static void FlashMoto()
 
 		commoto.Write(&wb);
 
-		while (commoto.Update()) HW::WDT->Update(); 
+		while (commoto.Update()) HW::ResetWDT(); 
 
 		rb.data = &rspHS;
 		rb.maxLen = sizeof(rspHS);
 		commoto.Read(&rb, MS2COM(5), US2COM(100));
 
-		while (commoto.Update()) HW::WDT->Update();
+		while (commoto.Update()) HW::ResetWDT();
 
 		if (rb.recieved)
 		{
@@ -2394,11 +2394,11 @@ static void FlashMoto()
 
 	if (hs)
 	{
-		while (!tm.Check(10)) HW::WDT->Update();
+		while (!tm.Check(10)) HW::ResetWDT();
 
 		req = CreateBootMotoReq01(motoFlashLen, 2);
 
-		qmoto.Add(req); while(!req->ready) { qmoto.Update(); HW::WDT->Update(); };
+		qmoto.Add(req); while(!req->ready) { qmoto.Update(); HW::ResetWDT(); };
 
 		if (req->crcOK)
 		{
@@ -2418,7 +2418,7 @@ static void FlashMoto()
 					{
 						req = CreateBootMotoReq02(adr, len, p, 3);
 
-						qmoto.Add(req); while(!req->ready) { qmoto.Update(); HW::WDT->Update(); };
+						qmoto.Add(req); while(!req->ready) { qmoto.Update(); HW::ResetWDT(); };
 
 						RspBootMoto *rsp = (RspBootMoto*)req->rb.data;
 
@@ -2427,7 +2427,7 @@ static void FlashMoto()
 
 					tm.Reset();
 
-					while (!tm.Check(1)) HW::WDT->Update();
+					while (!tm.Check(1)) HW::ResetWDT();
 
 					count -= len;
 					p += len;
@@ -2438,11 +2438,11 @@ static void FlashMoto()
 
 		req = CreateBootMotoReq03();
 
-		qmoto.Add(req); while(!req->ready) { qmoto.Update(); HW::WDT->Update();	};
+		qmoto.Add(req); while(!req->ready) { qmoto.Update(); HW::ResetWDT();	};
 
 		tm.Reset();
 
-		while (!tm.Check(1)) HW::WDT->Update();
+		while (!tm.Check(1)) HW::ResetWDT();
 	};
 }
 
@@ -2738,7 +2738,7 @@ static void Update()
 		UpdateTraps();
 
 #ifndef WIN32
-		if (!__debug) { HW::WDT->Update(); };
+		if (!__debug) { HW::ResetWDT(); };
 #endif
 	};
 	

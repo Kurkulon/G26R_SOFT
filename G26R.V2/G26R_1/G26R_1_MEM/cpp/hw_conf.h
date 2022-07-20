@@ -359,6 +359,8 @@
 	#define NAND_DELAY_RP()		{ delay(2);		}
 	#define NAND_DELAY_REH()	{ delay(2);		}
 	#define NAND_DELAY_WHR()	{ delay(10);	}
+	#define NAND_DELAY_ADL()	{ delay(20);	}
+	#define NAND_DELAY_PR()		{ delay(4);		}
 
 	#define NAND_WE_PER		NS2CLK(60)-1	
 	#define NAND_WE_CC0		NS2CLK(30) 
@@ -369,9 +371,9 @@
 
 	#ifdef nandTCC
 	
-		#define NAND_RE_PER		(NS2CLK(60)-1)
-		#define NAND_RE_CC0		NS2CLK(35) 
-		#define NAND_RE_CC1		NS2CLK(30)
+		#define NAND_RE_PER		(NS2CLK(100)-1)
+		#define NAND_RE_CC0		NS2CLK(55) 
+		#define NAND_RE_CC1		NS2CLK(50)
 
 		#define WE_PORT_PMUX	(PORT_PMUX_F) 
 		#define RE_PORT_PMUX	(PORT_PMUX_F) 

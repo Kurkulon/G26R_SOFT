@@ -93,7 +93,7 @@ static ERROR_CODE Wait_For_Status(byte Statusbit)
 
 		ErrorCode = POLL_TIMEOUT;	// Time out error
  
-		HW::WDT->Update();
+		HW::ResetWDT();
 	};
 
 	return ErrorCode;
@@ -121,7 +121,7 @@ static ERROR_CODE Wait_For_WEL()
 
 		ErrorCode = POLL_TIMEOUT;	// Time out error
 
-		HW::WDT->Update();
+		HW::ResetWDT();
 	};
 
 	return ErrorCode;
@@ -358,7 +358,7 @@ u16 at25df021_GetCRC16(u16 count)
 
 		crc.w = tableCRC[crc.b[0] ^ t] ^ crc.b[1];
 		
-		HW::WDT->Update();
+		HW::ResetWDT();
 	};
 	
 	spimem.ChipDisable();
@@ -393,7 +393,7 @@ ERROR_CODE at25df021_Write(const byte *data, u32 stAdr, u32 count, bool verify)
 		data += c;
 		stAdr += c;
 
-		HW::WDT->Update();
+		HW::ResetWDT();
     };
 
     return(Result);
