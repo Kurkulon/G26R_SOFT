@@ -29,7 +29,7 @@
 
 #endif
 
-enum { VERSION = 0x200 };
+enum { VERSION = 0x201 };
 
 //#pragma O3
 //#pragma Otime
@@ -942,13 +942,20 @@ static u32 InitRspMan_00(__packed u16 *data)
 
 //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
-static void RequestFlashWrite_00(Ptr<UNIBUF> &flwb)
+static bool RequestFlashWrite_00()
 {
-	__packed u16* data = (__packed u16*)(flwb->data+flwb->dataOffset);
+	Ptr<UNIBUF> b; b.Alloc();
 
-	flwb->dataLen = InitRspMan_00(data) * 2;
+	if (b.Valid())
+	{
+		__packed u16* data = (__packed u16*)(b->data+b->dataOffset);
 
-	RequestFlashWrite(flwb, data[0], true);
+		b->dataLen = InitRspMan_00(data) * 2;
+
+		return RequestFlashWrite(b, data[0], true);
+	};
+
+	return false;
 }
 
 //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -987,13 +994,20 @@ static u32 InitRspMan_10(__packed u16 *data)
 
 //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
-static void RequestFlashWrite_10(Ptr<UNIBUF> &flwb)
+static bool RequestFlashWrite_10()
 {
-	__packed u16* data = (__packed u16*)(flwb->data+flwb->dataOffset);
+	Ptr<UNIBUF> b; b.Alloc();
 
-	flwb->dataLen = InitRspMan_10(data) * 2;
+	if (b.Valid())
+	{
+		__packed u16* data = (__packed u16*)(b->data+b->dataOffset);
 
-	RequestFlashWrite(flwb, data[0], true);
+		b->dataLen = InitRspMan_10(data) * 2;
+
+		return RequestFlashWrite(b, data[0], true);
+	};
+
+	return false;
 }
 
 //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -1035,13 +1049,20 @@ static u32 InitRspMan_20(__packed u16 *data)
 
 //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
-static void RequestFlashWrite_20(Ptr<UNIBUF> &flwb)
+static bool RequestFlashWrite_20()
 {
-	__packed u16* data = (__packed u16*)(flwb->data+flwb->dataOffset);
+	Ptr<UNIBUF> b; b.Alloc();
 
-	flwb->dataLen = InitRspMan_20(data) * 2;
+	if (b.Valid())
+	{
+		__packed u16* data = (__packed u16*)(b->data+b->dataOffset);
 
-	RequestFlashWrite(flwb, data[0], true);
+		b->dataLen = InitRspMan_20(data) * 2;
+
+		return RequestFlashWrite(b, data[0], true);
+	};
+
+	return false;
 }
 
 //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -1610,8 +1631,6 @@ static void MainMode()
 			{
 				rsp = (RspDsp30*)(rq->rsp->GetDataPtr());
 
-				RequestFlashWrite(rq->rsp, rsp->h.rw, false);
-
 				mainModeState++;
 			};
 
@@ -1619,6 +1638,23 @@ static void MainMode()
 
 		case 1:
 		{
+			byte n = rsp->h.rw & 15;
+
+			if (n == 0)
+			{
+				if (RequestFlashWrite_20()) mainModeState++;
+			}
+			else
+			{
+				mainModeState++;
+			};
+
+			break;
+		};
+
+		case 2:
+		{
+			RequestFlashWrite(rq->rsp, rsp->h.rw, false);
 
 			byte n = rsp->h.rw & 15;
 
@@ -1631,44 +1667,15 @@ static void MainMode()
 			break;
 		};
 
-		case 2:
+		case 3:
 
 			if (cmdWriteStart_00)
 			{
-				Ptr<UNIBUF> b; b.Alloc();
-
-				if (b.Valid())
-				{
-					RequestFlashWrite_00(b);
-
-					cmdWriteStart_00 = false;
-				};
+				cmdWriteStart_00 = !RequestFlashWrite_00();
 			}
 			else if (cmdWriteStart_10)
 			{
-				Ptr<UNIBUF> b; b.Alloc();
-
-				if (b.Valid())
-				{
-					RequestFlashWrite_10(b);
-
-					cmdWriteStart_10 = false;
-				};
-			}
-			else if (cmdWriteStart_20)
-			{
-				Ptr<UNIBUF> b; b.Alloc();
-
-				if (b.Valid())
-				{
-					RequestFlashWrite_20(b);
-
-					cmdWriteStart_20 = false;
-				};
-			}
-			else if (tm.Check(1001))
-			{
-				cmdWriteStart_20 = true;
+				cmdWriteStart_10 = !RequestFlashWrite_10();
 			};
 
 			mainModeState = 0;
@@ -2458,7 +2465,7 @@ static void InitMainVars()
 	mv.sampleLen		= 500; 
 	mv.sampleDelay 		= 400; 
 	mv.freq				= 500; 
-	mv.firePeriod		= 100;
+	mv.firePeriod		= 1000;
 	mv.fireVoltage		= 500;
 }
 

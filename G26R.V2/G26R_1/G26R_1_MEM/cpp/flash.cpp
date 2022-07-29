@@ -18,7 +18,7 @@
 #define NAND_CHIP_MASK		(NAND_MAX_CHIP-1)
 
 #define LIST_ITEMS_NUM			128
-#define FLASH_WRITE_BUFFER_NUM	16
+#define FLASH_WRITE_BUFFER_NUM	24
 #define FLASH_READ_BUFFER_NUM	8
 
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
