@@ -2313,6 +2313,8 @@ static void FlashDSP_Direct()
 	u32 startAdr;
 
 	at25df021_Init(5000000);
+	
+	SEGGER_RTT_WriteString(0, RTT_CTRL_TEXT_BRIGHT_YELLOW "Start BF592 flash check ... ");
 
 	flen = sizeof(dspFlashPages);
 	fpages = dspFlashPages;
@@ -2325,7 +2327,20 @@ static void FlashDSP_Direct()
 
 	if (flashCRC != fcrc || flashLen != flen)
 	{
-		at25df021_Write((byte*)fpages, 0, flen, true);
+		SEGGER_RTT_WriteString(0, RTT_CTRL_TEXT_BRIGHT_RED "ERRROR\n" RTT_CTRL_TEXT_BRIGHT_WHITE "Start BF592 flash write ... ");
+
+		if (NO_ERR == at25df021_Write((byte*)fpages, 0, flen, true))
+		{
+			SEGGER_RTT_WriteString(0, RTT_CTRL_TEXT_BRIGHT_GREEN "OK\n");
+		}
+		else
+		{
+			SEGGER_RTT_WriteString(0, RTT_CTRL_TEXT_BRIGHT_RED "ERRROR\n");
+		};
+	}
+	else
+	{
+		SEGGER_RTT_WriteString(0, RTT_CTRL_TEXT_BRIGHT_GREEN "OK\n");
 	};
 
 	at25df021_Destroy();
@@ -2357,6 +2372,8 @@ static void FlashMoto()
 	const unsigned __int64 masterGUID = MGUID;
 	const unsigned __int64 slaveGUID = SGUID;
 
+	SEGGER_RTT_WriteString(0, RTT_CTRL_TEXT_BRIGHT_CYAN "Flash LPC824 start ...\n");
+
 	TM32 tm;
 
 	Ptr<REQ> req;
@@ -2371,6 +2388,8 @@ static void FlashMoto()
 	EnableLPC();
 
 	bool hs = false;
+
+	SEGGER_RTT_WriteString(0, RTT_CTRL_TEXT_BRIGHT_WHITE "HandShake LPC824 ... ");
 
 	while (!tm.Check(200))
 	{
@@ -2401,7 +2420,11 @@ static void FlashMoto()
 
 	if (hs)
 	{
+		SEGGER_RTT_WriteString(0, RTT_CTRL_TEXT_BRIGHT_GREEN "OK\n");
+
 		while (!tm.Check(10)) HW::ResetWDT();
+
+		SEGGER_RTT_WriteString(0, RTT_CTRL_TEXT_BRIGHT_YELLOW "Request LPC824 Flash CRC ... ");
 
 		req = CreateBootMotoReq01(motoFlashLen, 2);
 
@@ -2411,8 +2434,12 @@ static void FlashMoto()
 		{
 			RspBootMoto *rsp = (RspBootMoto*)req->rb.data;
 
+			SEGGER_RTT_WriteString(0, RTT_CTRL_TEXT_BRIGHT_GREEN "OK\n");
+
 			if (rsp->F01.flashCRC != motoFlashCRC || rsp->F01.flashLen != motoFlashLen)
 			{
+				SEGGER_RTT_WriteString(0, RTT_CTRL_TEXT_BRIGHT_YELLOW "Start write flash LPC824 ...");
+
 				u16 count = motoFlashLen/4;
 				u32 adr = 0;
 				const u32 *p = motoFlashPages;
@@ -2440,8 +2467,16 @@ static void FlashMoto()
 					p += len;
 					adr += len*4;
 				};
+
+				SEGGER_RTT_WriteString(0, RTT_CTRL_TEXT_BRIGHT_GREEN "OK\n");
 			};
+		}
+		else
+		{
+			SEGGER_RTT_WriteString(0, RTT_CTRL_TEXT_BRIGHT_RED "!!! ERROR !!!\n");
 		};
+
+		SEGGER_RTT_WriteString(0, RTT_CTRL_TEXT_BRIGHT_CYAN "Request LPC824 Main App start\n");
 
 		req = CreateBootMotoReq03();
 
@@ -2450,6 +2485,10 @@ static void FlashMoto()
 		tm.Reset();
 
 		while (!tm.Check(1)) HW::ResetWDT();
+	}
+	else
+	{
+		SEGGER_RTT_WriteString(0, RTT_CTRL_TEXT_BRIGHT_RED "!!! ERROR !!!\n");
 	};
 }
 
@@ -2864,6 +2903,8 @@ int main()
 
 	//fc = CRC_CCITT_PIO(buf, 6000, 0xFFFF);
 	//fc = CRC_CCITT_PIO(buf+6000, 2000, fc);
+
+	SEGGER_RTT_WriteString(0, RTT_CTRL_TEXT_BRIGHT_WHITE "Main Loop start ...\n");
 
 	while (1)
 	{
