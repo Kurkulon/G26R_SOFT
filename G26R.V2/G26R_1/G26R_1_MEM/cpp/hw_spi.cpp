@@ -20,37 +20,39 @@ static u32 SPI_CS_MASK[] = { CS0, CS1 };
 #include "CRC16_CCIT.h"
 #include "list.h"
 
-static HANDLE handleNandFile;
-static const char nameNandFile[] = "NAND_FLASH_STORE.BIN";
-
-static HANDLE handleWriteThread;
-static HANDLE handleReadThread;
-
-static byte nandChipSelected = 0;
-
-static u64 curNandFilePos = 0;
-//static u64 curNandFileBlockPos = 0;
-static u32 curBlock = 0;
-static u32 curRawBlock = 0;
-static u16 curPage = 0;
-static u16 curCol = 0;
-
-static OVERLAPPED	_overlapped;
-static u32			_ovlReadedBytes = 0;
-static u32			_ovlWritenBytes = 0;
-
-static void* nandEraseFillArray;
-static u32 nandEraseFillArraySize = 0;
-static byte nandReadStatus = 0x41;
-static u32 lastError = 0;
-
-
-static byte fram_I2c_Mem[0x10000];
+//static HANDLE handleNandFile;
+//static const char nameNandFile[] = "NAND_FLASH_STORE.BIN";
+//
+//static HANDLE handleWriteThread;
+//static HANDLE handleReadThread;
+//
+//static byte nandChipSelected = 0;
+//
+//static u64 curNandFilePos = 0;
+////static u64 curNandFileBlockPos = 0;
+//static u32 curBlock = 0;
+//static u32 curRawBlock = 0;
+//static u16 curPage = 0;
+//static u16 curCol = 0;
+//
+//static OVERLAPPED	_overlapped;
+//static u32			_ovlReadedBytes = 0;
+//static u32			_ovlWritenBytes = 0;
+//
+//static void* nandEraseFillArray;
+//static u32 nandEraseFillArraySize = 0;
+//static byte nandReadStatus = 0x41;
+//static u32 lastError = 0;
+//
+//
+//static byte fram_I2c_Mem[0x10000];
 static byte fram_SPI_Mem[0x40000];
-
+//
 static bool fram_spi_WREN = false;
+//
+//static u16 crc_ccit_result = 0;
 
-static u16 crc_ccit_result = 0;
+static S_SPIM	spi;
 
 #elif defined(CPU_SAME53)
 
@@ -64,23 +66,23 @@ static S_SPIM	spi(SPI_SERCOM_NUM, PIO_SPCK, PIO_MOSI, PIO_MISO, PIO_CS, SPCK, MO
 
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
-static byte *spi_wrPtr = 0;
-static byte *spi_rdPtr = 0;
-static u16 spi_wrCount = 0;
-static u16 spi_count = 0;
-static u16 spi_rdCount = 0;
-static byte *spi_wrPtr2 = 0;
-static u16 spi_wrCount2 = 0;
-static u32 spi_adr = 0;
-static DSCSPI* spi_dsc = 0;
-static DSCSPI* spi_lastDsc = 0;
+//static byte *spi_wrPtr = 0;
+//static byte *spi_rdPtr = 0;
+//static u16 spi_wrCount = 0;
+//static u16 spi_count = 0;
+//static u16 spi_rdCount = 0;
+//static byte *spi_wrPtr2 = 0;
+//static u16 spi_wrCount2 = 0;
+//static u32 spi_adr = 0;
+//static DSCSPI* spi_dsc = 0;
+//static DSCSPI* spi_lastDsc = 0;
 
 
-static u32 spi_timestamp = 0;
+//static u32 spi_timestamp = 0;
 
 //static bool SPI_Write(DSCSPI *d);
 //static bool SPI_Read(DSCSPI *d);
-static bool SPI_WriteRead(DSCSPI *d);
+//static bool SPI_WriteRead(DSCSPI *d);
 
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
@@ -170,16 +172,16 @@ bool SPI_AddRequest(DSCSPI *d)
 			break;
 	};
 
-#endif
-
 	return true;
+
+#endif
 }
 
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 bool SPI_Update()
 {
-	bool result = false;
+//	bool result = false;
 
 #ifdef CPU_SAME53
 
@@ -213,9 +215,9 @@ bool SPI_Update()
 	
 	__enable_irq();
 
-#endif
-
 	return result;
+
+#endif
 }
 
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++

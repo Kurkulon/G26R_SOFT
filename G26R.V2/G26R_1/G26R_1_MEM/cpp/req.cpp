@@ -65,7 +65,7 @@ void RequestQuery::Update()
 {
 //	static RTM32 tm;
 
-	enum { WAIT = 0, UPDATE_CRC_1, UPDATE_CRC_2, UPDATE_CRC_3, WRITE, READ, CHECK_CRC_1, CHECK_CRC_2, CALLBACK };
+	enum { WAIT = 0, UPDATE_CRC_1, UPDATE_CRC_2, UPDATE_CRC_3, WRITE, READ, CHECK_CRC_1, CHECK_CRC_2, CALLBACK_1 };
 
 	switch(_state)
 	{
@@ -169,7 +169,7 @@ void RequestQuery::Update()
 				}
 				else
 				{
-					_state = CALLBACK;
+					_state = CALLBACK_1;
 				};
 			};
 
@@ -190,7 +190,7 @@ void RequestQuery::Update()
 				else
 				{
 					_req->crcOK = false;
-					_state = CALLBACK;
+					_state = CALLBACK_1;
 				};
 			};
 
@@ -225,12 +225,12 @@ void RequestQuery::Update()
 			if (_crcLen == 0)
 			{
 				_req->crcOK = _crc == 0;
-				_state = CALLBACK;
+				_state = CALLBACK_1;
 			};
 
 			break;
 
-		case CALLBACK:
+		case CALLBACK_1:
 
 			if (_req->CallBack != 0)
 			{

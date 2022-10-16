@@ -33,26 +33,30 @@
 #endif
 
 //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+#define NUM_RX_DSC			8
+#define	NUM_TX_DSC			8
+#define ETH_RX_DRBS			8
+#define ETH_RX_BUF_SIZE     (ETH_RX_DRBS * 64)       /* EMAC Receive buffer size.         */
 
-#define OUR_IP_ADDR   	IP32(192, 168, 3, 234)
-#define OUR_IP_MASK   	IP32(255, 255, 255, 0)
-#define DHCP_IP_ADDR   	IP32(192, 168, 3, 254)
+#define OUR_IP_ADDR   		IP32(192, 168, 3, 234)
+#define OUR_IP_MASK   		IP32(255, 255, 255, 0)
+#define DHCP_IP_ADDR   		IP32(192, 168, 3, 254)
 #define PHYA 0
 
 static const MAC hwAdr = {0x12345678, 0x9ABC};
 
 static const u16 udpInPort = SWAP16(66);
-static const u16 udpOutPort = SWAP16(66);
+//static const u16 udpOutPort = SWAP16(66);
 
-inline bool HW_EMAC_RequestUDP(EthBuf* mb) { return RequestTrap(mb); }
-//inline bool HW_EMAC_RequestUDP(EthBuf* mb) { return RequestTFTP(mb); }
+inline bool HW_EMAC_RequestUDP(Ptr<MB> &mb) { return RequestTrap(mb); }
+//inline bool HW_EMAC_RequestUDP(Ptr<MB> &mb) { return RequestTFTP(mb); }
 
 //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-List<SysEthBuf> SysEthBuf::freeList;
-List<HugeTx>	HugeTx::freeList;
-
-static SysEthBuf	sysTxBuf[16];
-static HugeTx		hugeTxBuf[8];
+//List<SysEthBuf> SysEthBuf::freeList;
+//List<HugeTx>	HugeTx::freeList;
+//
+//static SysEthBuf	sysTxBuf[16];
+//static HugeTx		hugeTxBuf[8];
 
 //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
@@ -99,7 +103,7 @@ static bool HW_EMAC_Init()
 	using namespace HW;
 	
 	/* Initialize the GMAC ethernet controller. */
-	u32 id1,id2;
+//	u32 id1,id2;
 
 #ifdef CPU_SAME53	
 

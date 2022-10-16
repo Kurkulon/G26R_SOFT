@@ -25,50 +25,50 @@
 #include "CRC16_CCIT.h"
 #include "list.h"
 
-static HANDLE handleNandFile;
-static const char nameNandFile[] = "NAND_FLASH_STORE.BIN";
-
-static HANDLE handleWriteThread;
-static HANDLE handleReadThread;
-
-static byte nandChipSelected = 0;
-
-static u64 curNandFilePos = 0;
-//static u64 curNandFileBlockPos = 0;
-static u32 curBlock = 0;
-static u32 curRawBlock = 0;
-static u16 curPage = 0;
-static u16 curCol = 0;
-
-static OVERLAPPED	_overlapped;
-static u32			_ovlReadedBytes = 0;
-static u32			_ovlWritenBytes = 0;
-
-static void* nandEraseFillArray;
-static u32 nandEraseFillArraySize = 0;
-static byte nandReadStatus = 0x41;
-static u32 lastError = 0;
-
-
-static byte fram_I2c_Mem[0x10000];
-static byte fram_SPI_Mem[0x40000];
-
-static bool fram_spi_WREN = false;
+//static HANDLE handleNandFile;
+//static const char nameNandFile[] = "NAND_FLASH_STORE.BIN";
+//
+//static HANDLE handleWriteThread;
+//static HANDLE handleReadThread;
+//
+//static byte nandChipSelected = 0;
+//
+//static u64 curNandFilePos = 0;
+////static u64 curNandFileBlockPos = 0;
+//static u32 curBlock = 0;
+//static u32 curRawBlock = 0;
+//static u16 curPage = 0;
+//static u16 curCol = 0;
+//
+//static OVERLAPPED	_overlapped;
+//static u32			_ovlReadedBytes = 0;
+//static u32			_ovlWritenBytes = 0;
+//
+//static void* nandEraseFillArray;
+//static u32 nandEraseFillArraySize = 0;
+//static byte nandReadStatus = 0x41;
+//static u32 lastError = 0;
+//
+//
+//static byte fram_I2c_Mem[0x10000];
+//static byte fram_SPI_Mem[0x40000];
+//
+//static bool fram_spi_WREN = false;
 
 static u16 crc_ccit_result = 0;
 
 
-struct BlockBuffer { BlockBuffer *next; u32 block; u32 prevBlock; u32 writed; u32 data[((NAND_PAGE_SIZE+NAND_SPARE_SIZE) << NAND_PAGE_BITS) >> 2]; };
+//struct BlockBuffer { BlockBuffer *next; u32 block; u32 prevBlock; u32 writed; u32 data[((NAND_PAGE_SIZE+NAND_SPARE_SIZE) << NAND_PAGE_BITS) >> 2]; };
 
-static BlockBuffer _blockBuf[16];
-
-static List<BlockBuffer> freeBlockBuffer;
-static List<BlockBuffer> rdBlockBuffer;
-static List<BlockBuffer> wrBlockBuffer;
-
-static BlockBuffer *curNandBlockBuffer[4] = { 0 };
-
-static volatile bool busyWriteThread = false;
+//static BlockBuffer _blockBuf[16];
+//
+//static List<BlockBuffer> freeBlockBuffer;
+//static List<BlockBuffer> rdBlockBuffer;
+//static List<BlockBuffer> wrBlockBuffer;
+//
+//static BlockBuffer *curNandBlockBuffer[4] = { 0 };
+//
+//static volatile bool busyWriteThread = false;
 
 #elif defined(CPU_SAME53)
 
@@ -84,9 +84,9 @@ static volatile bool busyWriteThread = false;
 
 #define GEAR_RATIO 12.25
 
-const u16 pulsesPerHeadRoundFix4 = GEAR_RATIO * 6 * 16;
+//const u16 pulsesPerHeadRoundFix4 = GEAR_RATIO * 6 * 16;
 
-const u16 testNandChipMask = 0xFFFF;
+//const u16 testNandChipMask = 0xFFFF;
 
 static volatile u32 shaftCounter = 0;
 static volatile u32 shaftPrevTime = 0;
@@ -613,13 +613,13 @@ bool CRC_CCITT_DMA_CheckComplete(u16* crc)
 
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
-static void Init_CRC_CCITT_DMA()
-{
-	//T_HW::DMADESC &dmadsc = DmaTable[CRC_DMACH];
-	//T_HW::S_DMAC::S_DMAC_CH	&dmach = HW::DMAC->CH[CRC_DMACH];
-
-	//HW::DMAC->CRCCTRL = DMAC_CRCBEATSIZE_BYTE|DMAC_CRCPOLY_CRC16|DMAC_CRCMODE_CRCGEN|DMAC_CRCSRC(0x3F);
-}
+//static void Init_CRC_CCITT_DMA()
+//{
+//	//T_HW::DMADESC &dmadsc = DmaTable[CRC_DMACH];
+//	//T_HW::S_DMAC::S_DMAC_CH	&dmach = HW::DMAC->CH[CRC_DMACH];
+//
+//	//HW::DMAC->CRCCTRL = DMAC_CRCBEATSIZE_BYTE|DMAC_CRCPOLY_CRC16|DMAC_CRCMODE_CRCGEN|DMAC_CRCSRC(0x3F);
+//}
 
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
@@ -637,6 +637,8 @@ u16 CRC_CCITT_DMA(const void *data, u32 len, u16 init)
 bool CRC_CCITT_DMA_Async(const void* data, u32 len, u16 init)
 {
 	crc_ccit_result = 0;//GetCRC16_CCIT(data, len, init);
+	
+	return true;
 }
 
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -686,8 +688,8 @@ void SetClock(const RTC &t)
 {
 	static DSCI2C dsc;
 
-	static byte reg = 0;
-	static u16 rbuf = 0;
+//	static byte reg = 0;
+//	static u16 rbuf = 0;
 	static byte buf[10];
 
 	buf[0] = 0;

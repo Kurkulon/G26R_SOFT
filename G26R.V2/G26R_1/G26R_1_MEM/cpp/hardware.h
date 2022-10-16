@@ -14,21 +14,21 @@
 
 //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
-#define UNIBUF_LEN (3072)
+//#define UNIBUF_LEN (3072)
 
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
-struct UNIBUF : public PtrItem<UNIBUF>
-{
-	UNIBUF() : dataOffset(sizeof(VecData::Hdr)), dataLen(0)  { /*freeBufList.Add(this);*/ }
-
-	u16		dataOffset;
-	u16 	dataLen;
-
-	byte	data[UNIBUF_LEN]; // Последние 2 байта CRC16
-
-	void*	GetDataPtr() { return data+dataOffset; }
-};
+//struct UNIBUF : public PtrItem<UNIBUF>
+//{
+//	UNIBUF() : dataOffset(sizeof(VecData::Hdr)), dataLen(0)  { /*freeBufList.Add(this);*/ }
+//
+//	u16		dataOffset;
+//	u16 	dataLen;
+//
+//	byte	data[UNIBUF_LEN]; // Последние 2 байта CRC16
+//
+//	void*	GetDataPtr() { return data+dataOffset; }
+//};
 
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
@@ -49,11 +49,15 @@ extern void InitHardware();
 extern void UpdateHardware();
 extern void SetClock(const RTC &t);
 
+#ifndef WIN32
+
 __forceinline void EnableLPC()	{ PIO_RESET->CLR(RESET); 		}
 __forceinline void DisableLPC()	{ PIO_RESET->SET(RESET); 		}
 
 __forceinline void EnableDSP()	{ PIO_DSP_RESET->SET(DSP_RESET); 		}
 __forceinline void DisableDSP()	{ PIO_DSP_RESET->CLR(DSP_RESET); 		}
+
+#endif
 
 //__forceinline void Set_DSP_BootMode_UART()	{ PIO_DSP_BMODE1->CLR(DSP_BMODE1); 		}
 //__forceinline void Set_DSP_BootMode_SPI()	{ PIO_DSP_BMODE1->SET(DSP_BMODE1); 	}
@@ -65,9 +69,8 @@ __forceinline void DisableDSP()	{ PIO_DSP_RESET->CLR(DSP_RESET); 		}
 
 __forceinline u32 Push_IRQ()
 {
-	register u32 t;
-
 #ifndef WIN32
+	register u32 t;
 
 	register u32 primask __asm("primask");
 
@@ -75,9 +78,13 @@ __forceinline u32 Push_IRQ()
 
 	__disable_irq();
 
-#endif
-
 	return t;
+
+#else
+
+	return 0;
+
+#endif
 }
 
 //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++

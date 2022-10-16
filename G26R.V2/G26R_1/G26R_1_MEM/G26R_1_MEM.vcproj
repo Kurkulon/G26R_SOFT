@@ -105,7 +105,7 @@
 				BuildCommandLine="wmake -h version=Win32_Debug targetcpu=WIN32"
 				ReBuildCommandLine="wmake -h -a version=Win32_Debug targetcpu=WIN32"
 				CleanCommandLine="@del /Q $(OutDir)\*.*"
-				Output="$(OutDir)\G26K_WIN32.exe"
+				Output="$(OutDir)\G26R_1_MEM.exe"
 				PreprocessorDefinitions="_DEBUG,__softfp=,WIN32"
 				IncludeSearchPath="$(ProjectDir)..\..\..\..\G_LIBS_ARM\cpp;"
 				ForcedIncludes=""
@@ -161,6 +161,10 @@
 			</File>
 			<File
 				RelativePath=".\cpp\manch.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\cpp\mem.cpp"
 				>
 			</File>
 			<File

@@ -23,50 +23,50 @@
 #include "CRC16_CCIT.h"
 #include "list.h"
 
-static HANDLE handleNandFile;
-static const char nameNandFile[] = "NAND_FLASH_STORE.BIN";
-
-static HANDLE handleWriteThread;
-static HANDLE handleReadThread;
-
-static byte nandChipSelected = 0;
-
-static u64 curNandFilePos = 0;
-//static u64 curNandFileBlockPos = 0;
-static u32 curBlock = 0;
-static u32 curRawBlock = 0;
-static u16 curPage = 0;
-static u16 curCol = 0;
-
-static OVERLAPPED	_overlapped;
-static u32			_ovlReadedBytes = 0;
-static u32			_ovlWritenBytes = 0;
-
-static void* nandEraseFillArray;
-static u32 nandEraseFillArraySize = 0;
-static byte nandReadStatus = 0x41;
-static u32 lastError = 0;
-
-
+//static HANDLE handleNandFile;
+//static const char nameNandFile[] = "NAND_FLASH_STORE.BIN";
+//
+//static HANDLE handleWriteThread;
+//static HANDLE handleReadThread;
+//
+//static byte nandChipSelected = 0;
+//
+//static u64 curNandFilePos = 0;
+////static u64 curNandFileBlockPos = 0;
+//static u32 curBlock = 0;
+//static u32 curRawBlock = 0;
+//static u16 curPage = 0;
+//static u16 curCol = 0;
+//
+//static OVERLAPPED	_overlapped;
+//static u32			_ovlReadedBytes = 0;
+//static u32			_ovlWritenBytes = 0;
+//
+//static void* nandEraseFillArray;
+//static u32 nandEraseFillArraySize = 0;
+//static byte nandReadStatus = 0x41;
+//static u32 lastError = 0;
+//
+//
 static byte fram_I2c_Mem[0x10000];
-static byte fram_SPI_Mem[0x40000];
-
-static bool fram_spi_WREN = false;
-
-static u16 crc_ccit_result = 0;
-
-
-struct BlockBuffer { BlockBuffer *next; u32 block; u32 prevBlock; u32 writed; u32 data[((NAND_PAGE_SIZE+NAND_SPARE_SIZE) << NAND_PAGE_BITS) >> 2]; };
-
-static BlockBuffer _blockBuf[16];
-
-static List<BlockBuffer> freeBlockBuffer;
-static List<BlockBuffer> rdBlockBuffer;
-static List<BlockBuffer> wrBlockBuffer;
-
-static BlockBuffer *curNandBlockBuffer[4] = { 0 };
-
-static volatile bool busyWriteThread = false;
+//static byte fram_SPI_Mem[0x40000];
+//
+//static bool fram_spi_WREN = false;
+//
+//static u16 crc_ccit_result = 0;
+//
+//
+//struct BlockBuffer { BlockBuffer *next; u32 block; u32 prevBlock; u32 writed; u32 data[((NAND_PAGE_SIZE+NAND_SPARE_SIZE) << NAND_PAGE_BITS) >> 2]; };
+//
+//static BlockBuffer _blockBuf[16];
+//
+//static List<BlockBuffer> freeBlockBuffer;
+//static List<BlockBuffer> rdBlockBuffer;
+//static List<BlockBuffer> wrBlockBuffer;
+//
+//static BlockBuffer *curNandBlockBuffer[4] = { 0 };
+//
+//static volatile bool busyWriteThread = false;
 
 #elif defined(CPU_SAME53)
 
@@ -91,7 +91,11 @@ static S_I2C i2c(I2C_SERCOM_NUM, PIO_I2C, SCL, I2C_PMUX_SCL, PIO_I2C, SDA, I2C_P
 
 bool I2C_Update()
 {
+#ifndef WIN32
 	return i2c.Update();
+#else
+	return true;
+#endif
 }
 
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++

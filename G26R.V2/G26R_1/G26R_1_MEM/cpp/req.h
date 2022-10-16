@@ -281,6 +281,8 @@ union ReqUnion
 
 struct REQ : public PtrItem<REQ>
 {
+	PTR_LIST_FRIENDS(REQ);
+
 	enum CRC_TYPE { CRC16 = 0, CRC16_CCIT, CRC16_NOT_VALID };
 
 	bool		ready;
@@ -297,7 +299,7 @@ struct REQ : public PtrItem<REQ>
 	//REQ *next;
 
 	tRsp		*CallBack;
-	Ptr<UNIBUF>	rsp;
+	Ptr<MB>		rsp;
 
 	ComPort::WriteBuffer wb;
 	ComPort::ReadBuffer rb;

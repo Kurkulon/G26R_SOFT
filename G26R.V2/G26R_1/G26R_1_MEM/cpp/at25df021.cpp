@@ -1,3 +1,5 @@
+#ifndef WIN32
+
 #include "at25df021.h"
 
 #include "types.h"
@@ -10,14 +12,12 @@
 #define NUM_SECTORS 	64			/* number of sectors in the flash device */
 #define SECTOR_SIZE		4096
 
-static char 	*pFlashDesc =		"Atmel AT25DF021";
-static char 	*pDeviceCompany	=	"Atmel Corporation";
+//static char 	*pFlashDesc =		"Atmel AT25DF021";
+//static char 	*pDeviceCompany	=	"Atmel Corporation";
 
-static int		gNumSectors = NUM_SECTORS;
+//static int		gNumSectors = NUM_SECTORS;
 
-#ifndef WIN32
 static u32 DSP_FS_MASK[] = { DSP_FS };
-#endif
 
 #ifdef WIN32
 
@@ -33,10 +33,10 @@ static S_SPIM	spimem(DSP_SERCOM_NUM, PIO_DSP_SPCK, PIO_DSP_MOSI, PIO_DSP_MISO, P
 static u16 flashCRC = 0;
 static u32 flashLen = 0;
 static u16 lastErasedBlock = ~0;
-static bool flashOK = false;
-static bool flashChecked = false;
-static bool flashCRCOK = false;
-static byte buf[SECTOR_SIZE];
+//static bool flashOK = false;
+//static bool flashChecked = false;
+//static bool flashCRCOK = false;
+//static byte buf[SECTOR_SIZE];
 
 
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -149,10 +149,10 @@ static void CmdWriteEnable()
 
 //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
-static void CmdWriteDisable()
-{
-	__SendSingleCommand(SPI_WRDI);
-}
+//static void CmdWriteDisable()
+//{
+//	__SendSingleCommand(SPI_WRDI);
+//}
 
 //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
@@ -194,10 +194,10 @@ static void GlobalUnProtect()
 
 //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
-static u32 GetNumSectors()
-{
-	return gNumSectors;
-}
+//static u32 GetNumSectors()
+//{
+//	return gNumSectors;
+//}
 
 //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
@@ -226,7 +226,7 @@ ERROR_CODE EraseBlock(u32 sec)
 
 static ERROR_CODE WritePage(void *data, u32 stAdr, u16 count )
 {
-	static byte buf[4];
+//	static byte buf[4];
 
     ERROR_CODE Result = NO_ERR;
 
@@ -372,7 +372,7 @@ ERROR_CODE at25df021_Write(const byte *data, u32 stAdr, u32 count, bool verify)
 {
     ERROR_CODE Result = NO_ERR;
 
-	u32 c;
+//	u32 c;
 
 	while (count > 0)
 	{
@@ -404,7 +404,7 @@ ERROR_CODE at25df021_Write(const byte *data, u32 stAdr, u32 count, bool verify)
 bool BlackFin_CheckFlash(u16 *pcrc, u16 *plen)
 {
 	static ADI_BOOT_HEADER bh;
-	static u16 crc = 0;
+//	static u16 crc = 0;
 
 //	if (FlashBusy()) return;
 
@@ -412,7 +412,7 @@ bool BlackFin_CheckFlash(u16 *pcrc, u16 *plen)
 
 	u32 adr = 0;
 	
-	flashOK = flashChecked = flashCRCOK = false;
+//	flashOK = flashChecked = flashCRCOK = false;
 
 	//at25df021_Read(buf, FLASH_START_ADR, sizeof(buf));
 
@@ -435,7 +435,7 @@ bool BlackFin_CheckFlash(u16 *pcrc, u16 *plen)
 
 			if (bh.dBlockCode & BFLAG_FINAL)
 			{
-				flashOK = true;
+//				flashOK = true;
 
 				break;
 			};
@@ -454,7 +454,7 @@ bool BlackFin_CheckFlash(u16 *pcrc, u16 *plen)
 
 	//if (!flashCRCOK) flashLen = 0;
 
-	flashChecked = true;
+//	flashChecked = true;
 
 	if (pcrc != 0) *pcrc = flashCRC;
 	if (plen != 0) *plen = flashLen;
@@ -463,3 +463,6 @@ bool BlackFin_CheckFlash(u16 *pcrc, u16 *plen)
 }
 
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+#endif // #ifndef WIN32
+
