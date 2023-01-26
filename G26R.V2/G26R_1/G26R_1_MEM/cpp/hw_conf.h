@@ -363,8 +363,8 @@
 	#define NAND_DELAY_PR()		{ delay(4);		}
 
 	#define NAND_WE_PER		NS2CLK(60)-1	
-	#define NAND_WE_CC0		NS2CLK(30) 
-	#define NAND_WE_CC1		NS2CLK(30)
+	#define NAND_WE_CC0		NS2CLK(40) 
+	#define NAND_WE_CC1		NS2CLK(40)
 
 	#define nandTCC			HW::NAND_TCC
 	//#define nandTC			HW::NAND_TC
@@ -475,6 +475,36 @@
 	#define CLOCK_EXTINT	(PIN_RTCINT & 15)
 	#define CLOCK_IRQ		(EIC_0_IRQ+CLOCK_EXTINT)
 
+	// ++++++++++++++	EMAC	++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+	#define EMAC_PHYA 0
+
+	#define PIO_RESET_PHY	HW::PIOC
+	#define PIN_RESET_PHY	15
+
+	#define PIO_GMD			HW::PIOA
+	#define PIN_GMDC		20
+	#define PIN_GMDIO		21
+
+	#define GMDC			(1UL<<PIN_GMDC) 
+	#define GMDIO			(1UL<<PIN_GMDIO) 
+
+	// ++++++++++++++	PIO INIT	++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+	#define PIOA_INIT_DIR		(0xFF|PA11|PA16|PA24|PA25|PA27)
+	#define PIOA_INIT_SET		(0)
+	#define PIOA_INIT_CLR		(0xFF|PA11|PA16|PA24|PA25|PA27)
+
+	#define PIOB_INIT_DIR		(PB06|PB07|PB08|PB18)
+	#define PIOB_INIT_SET		(0)
+	#define PIOB_INIT_CLR		(PB06|PB07|PB08|PB18)
+
+	#define PIOC_INIT_DIR		(PC00|DSP_RESET|PC02|PC03|ENVCORE|PC06|PC07|RESET|PC11|PC12|PC15|PC17|PC18|PC19|PC21|PC24|PC26|L1|H1|L2|H2)
+	#define PIOC_INIT_SET		(DSP_RESET|PC02|H1|H2|PC15)
+	#define PIOC_INIT_CLR		(PC00|PC03|ENVCORE|PC06|PC07|RESET|PC11|PC12|PC17|PC18|PC19|PC21|PC24|PC26|L1|L2)
+
+	#define Pin_MainLoop_Set()	HW::PIOA->BSET(25)
+	#define Pin_MainLoop_Clr()	HW::PIOA->BCLR(25)
 
 #elif defined(CPU_XMC48) //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 

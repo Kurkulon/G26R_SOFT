@@ -2068,6 +2068,7 @@ static void UpdateMoto()
 	static TM32 tm;
 
 	static byte i = 0;
+	static byte count = 0;
 
 	switch (i)
 	{
@@ -2088,6 +2089,27 @@ static void UpdateMoto()
 
 			if (rq->ready)
 			{
+				if (count >= 10)
+				{
+					DisableLPC();
+
+					motoRcvCount = 0;
+
+					tm.Reset();
+
+					count = 0;
+
+					i++;
+				}
+				else if (rq->crcOK)
+				{
+					count = 0;
+				}
+				else
+				{
+					count += 1;
+				};
+
 				rq.Free();
 
 				i++;
@@ -2098,6 +2120,26 @@ static void UpdateMoto()
 		case 2:
 
 			if (tm.Check(101)) i = 0;
+
+			break;
+
+		case 3:
+
+			if (tm.Check(2))
+			{
+				EnableLPC();
+
+				i++;
+			};
+
+			break;
+
+		case 4:
+
+			if (tm.Check(500))
+			{
+				i = 0;
+			};
 
 			break;
 	};
@@ -2143,7 +2185,7 @@ static void UpdateDSP()
 	static Ptr<REQ> rq;
 
 	static byte i = 0;
-//	static TM32 tm;
+	static TM32 tm;
 
 	static bool repeat = false;
 
@@ -2173,14 +2215,48 @@ static void UpdateDSP()
 				if (rq->crcOK && rq->rsp->len != 0)
 				{
 					readyR01.Add(rq);
+
+					tm.Reset();
 				};
-				
-				i = 0;
+
+				if (tm.Check(1000))
+				{
+					DisableDSP();
+
+					dspRcvCount = 0;
+
+					i++;
+				}
+				else
+				{
+					i = 0;
+				};
 
 				rq.Free();
 			};
 
 			break;
+
+		case 2:
+
+			if (tm.Check(2))
+			{
+				EnableDSP();
+
+				i++;
+			};
+
+			break;
+
+		case 3:
+
+			if (tm.Check(500))
+			{
+				i = 0;
+			};
+
+			break;
+
 	};
 
 	qdsp.Update();
