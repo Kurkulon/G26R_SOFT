@@ -29,7 +29,7 @@
 
 #endif
 
-enum { VERSION = 0x203 };
+enum { VERSION = 0x204 };
 
 //#pragma O3
 //#pragma Otime
@@ -386,38 +386,23 @@ Ptr<REQ> CreateDspReq01(bool repeat, u16 tryCount)
 
 Ptr<MB> CreateTestDspReq01()
 {
-	Ptr<MB> rq(AllocMemBuffer((22+1500)*2));
+	Ptr<MB> rq(AllocFlashWriteBuffer(sizeof(RspDsp30::h) + 1024*2 + 2));
 	
 	if (!rq.Valid()) { return rq; };
 
-	RspDsp01 &rsp = *((RspDsp01*)(rq->GetDataPtr()));
+	RspDsp30 &rsp = *((RspDsp30*)(rq->GetDataPtr()));
 
-	//rsp.rw = manReqWord|0x40;
-	//rsp.CM.time += 1;
-	//rsp.CM.hallTime += 1;
-	//rsp.CM.motoCount += 1;
-	//rsp.CM.headCount += 1;
-	//rsp.CM.ax += 1;
-	//rsp.CM.ay += 1;
-	//rsp.CM.az += 1;
-	//rsp.CM.at += 1;
-	//rsp.CM.sensType = 0;
-	//rsp.CM.angle += 1;
-	//rsp.CM.maxAmp += 1;
-	//rsp.CM.fi_amp += 1;
-	//rsp.CM.fi_time += 1;
-	//rsp.CM.gain += 1;
-	//rsp.CM.st = 1;
-	//rsp.CM.sl = 4;
-	//rsp.CM.sd = 0;
-	//rsp.CM.pakType = 0;
-	//rsp.CM.pakLen = 0;
-	//rsp.CM.data[0] += 1;
-	//rsp.CM.data[1] += 1;
-	//rsp.CM.data[2] += 1;
-	//rsp.CM.data[3] += 1;
+	rsp.h.rw		= manReqWord|0x30;
+	rsp.h.verDevice = verDevice;
 
-	rq->len = (22+1500)*2;
+	rsp.h.gain		= 0;
+	rsp.h.st		= 1;
+	rsp.h.sl		= 1024;
+	rsp.h.sd		= 0;
+
+	for (u32 i = 0; i < rsp.h.sl; i++) rsp.data[i] = i;
+
+	rq->len = sizeof(rsp.h) + rsp.h.sl*2;
 	
 	return rq;
 }
@@ -2193,11 +2178,11 @@ static void UpdateDSP()
 	{
 		case 0:
 
-			//if ((mv.fireVoltage == 0 && motoTargetRPS == 1500) || __WIN32__)
-			//{
-			//	if (FLASH_Status() != 0) UpdateTestFlashWrite();
-			//}
-			//else
+			if (mv.fireVoltage == 1)
+			{
+				if (FLASH_Status() != 0) UpdateTestFlashWrite();
+			}
+			else
 			{
 				rq = CreateDspReq01(repeat, 0);
 
@@ -2976,7 +2961,8 @@ int main()
 	//for (u32 i = 0; i < ArraySize(buf); i++) buf[i] = i;
 
 	//fps = CRC_CCITT_DMA(0, 100);
-	//fc =  GetCRC16_CCIT_refl(0, 100);
+	//fc = CRC_CCITT_DMA(0, 50);
+	//fc = CRC_CCITT_DMA((void*)50, 50, fc);
 
 	//fps = CRC_CCITT_DMA(buf, 6000, 0xFFFF);
 	//fps = CRC_CCITT_DMA(buf+6000, 2000, fps);
