@@ -29,7 +29,7 @@
 
 #endif
 
-enum { VERSION = 0x204 };
+enum { VERSION = 0x205 };
 
 //#pragma O3
 //#pragma Otime
@@ -1477,7 +1477,7 @@ static bool RequestMem_F0(u16 *data, u16 len, MTB* mtb)
 {
 	if (data == 0 || len == 0 || len > 2 || mtb == 0) return false;
 
-	//SaveParams();
+	SaveMainParams();
 
 	manTrmData[0] = (memReqWord & memReqMask) | 0xF0;
 
@@ -2853,10 +2853,15 @@ static void Update()
 #endif
 	};
 	
+	UpdateHardware();
+
 	if (!(IsComputerFind() && EmacIsConnected()))
 	{
-		UpdateHardware();
 		UpdateMisc();
+	}
+	else
+	{
+		FLASH_Update();
 	};
 }
 
