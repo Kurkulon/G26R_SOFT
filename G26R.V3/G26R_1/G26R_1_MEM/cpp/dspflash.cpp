@@ -24,7 +24,7 @@ static S_SPIM	spi4(DSP_SERCOM_NUM, PIO_DSP_SPCK, PIO_DSP_MOSI, PIO_DSP_MISO, PIO
 
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
-#include <FLASH\FlashSPI_imp.h>
+#include <FLASH\FlashSPI_imp_v2.h>
 
 FlashSPI dspFlash(spi4, 0);
 

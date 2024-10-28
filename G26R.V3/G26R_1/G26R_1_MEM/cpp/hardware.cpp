@@ -22,7 +22,7 @@
 #include <stdarg.h>
 #include <stdio.h>
 #include <intrin.h>
-#include "CRC16_CCIT.h"
+//#include "CRC\CRC16_CCIT.h"
 #include "list.h"
 
 //static HANDLE handleNandFile;
@@ -55,7 +55,7 @@
 //
 //static bool fram_spi_WREN = false;
 
-static u16 crc_ccit_result = 0;
+//static u16 crc_ccit_result = 0;
 
 
 //struct BlockBuffer { BlockBuffer *next; u32 block; u32 prevBlock; u32 writed; u32 data[((NAND_PAGE_SIZE+NAND_SPARE_SIZE) << NAND_PAGE_BITS) >> 2]; };

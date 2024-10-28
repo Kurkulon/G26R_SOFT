@@ -20,7 +20,7 @@
 #include <stdarg.h>
 #include <stdio.h>
 #include <intrin.h>
-#include "CRC16_CCIT.h"
+//#include "CRC16_CCIT.h"
 #include "list.h"
 
 //static HANDLE handleNandFile;

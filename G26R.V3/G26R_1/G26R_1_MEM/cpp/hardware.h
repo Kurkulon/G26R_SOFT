@@ -53,6 +53,14 @@ __forceinline void DisableLPC()	{ PIO_RESET->SET(RESET); 		}
 __forceinline void EnableDSP()	{ PIO_DSP_RESET->SET(DSP_RESET); 		}
 __forceinline void DisableDSP()	{ PIO_DSP_RESET->CLR(DSP_RESET); 		}
 
+#else
+
+__forceinline void EnableLPC()		{		}
+__forceinline void DisableLPC()	{		}
+
+__forceinline void EnableDSP()		{ 		}
+__forceinline void DisableDSP()	{ 		}
+
 #endif
 
 //__forceinline void Set_DSP_BootMode_UART()	{ PIO_DSP_BMODE1->CLR(DSP_BMODE1); 		}

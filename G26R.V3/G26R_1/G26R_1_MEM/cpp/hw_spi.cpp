@@ -17,7 +17,7 @@ static u32 SPI_CS_MASK[] = { CS0, CS1 };
 #include <stdarg.h>
 #include <stdio.h>
 #include <intrin.h>
-#include "CRC16_CCIT.h"
+//#include "CRC16_CCIT.h"
 #include "list.h"
 
 //static HANDLE handleNandFile;
@@ -181,7 +181,6 @@ bool SPI_AddRequest(DSCSPI *d)
 
 bool SPI_Update()
 {
-//	bool result = false;
 
 #ifdef CPU_SAME53
 
@@ -192,6 +191,8 @@ bool SPI_Update()
 	using namespace HW;
 
 	static TM32 tm;
+
+	bool result = false;
 
 	__disable_irq();
 
@@ -216,6 +217,10 @@ bool SPI_Update()
 	__enable_irq();
 
 	return result;
+
+#else
+
+	return true;
 
 #endif
 }
