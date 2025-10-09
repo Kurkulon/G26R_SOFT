@@ -29,7 +29,7 @@
 
 #endif
 
-enum { VERSION = 0x206 };
+enum { VERSION = 0x207 };
 
 //#pragma O3
 //#pragma Otime
@@ -285,18 +285,23 @@ static void Update_RPS_SPR()
 
 bool CallBackDspReq01(Ptr<REQ> &q)
 {
-	RspDsp01 &rsp = *((RspDsp01*)q->rb.data);
+	RspDsp30 &rsp = *((RspDsp30*)q->rb.data);
 	 
 	if (q->rb.recieved && q->crcOK)
 	{
-		if ((rsp.rw & ~15) == (dspReqWord|0x30))
+		if ((rsp.h.rw & ~15) == (dspReqWord|0x30))
 		{
 			q->rsp->len = q->rb.len;
+
+			if (rsp.h.sl != mv.sampleLen || rsp.h.st != mv.sampleTime || rsp.h.sd != mv.sampleDelay || rsp.h.gain != mv.gain)
+			{
+				q->rsp->len = 0;
+			};
 
 			dspRcv30++;
 			dspRcvCount++;
 		}
-		else if (rsp.rw == (dspReqWord|1))
+		else if (rsp.h.rw == (dspReqWord|1))
 		{
 			q->rsp->len = 0;
 
