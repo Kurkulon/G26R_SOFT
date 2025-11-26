@@ -20,6 +20,9 @@
 #define FRAM_I2C_MAINVARS_ADR 0
 #define FRAM_I2C_SESSIONS_ADR 0x200
 
+#define REAL_TIME_CLOCK_ENABLE
+#define TRAP_PACKET_VERSION		7
+
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 #ifdef CPU_SAME53	
@@ -78,17 +81,17 @@
 
 	// ++++++++++++++	DMA	0...31	++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
-	#define	NAND_DMA			DMA_CH0
-	#define	UART0_DMA			DMA_CH1
-	#define	UART2_DMA			DMA_CH2
-	//#define	COM3_DMA			DMA_CH3
-	#define	SPI_DMACH_TX		DMA_CH4
-	#define	SPI_DMACH_RX		DMA_CH5
-	#define	NAND_MEMCOPY_DMA	DMA_CH6
-	#define	I2C_DMACH			DMA_CH7
-	#define	DSP_DMATX			DMA_CH8
-	#define	DSP_DMARX			DMA_CH9
-	#define	CRC_DMA				DMA_CH31
+	#define	NAND_DMA_CH			0
+	#define	UART0_DMA_CH		1
+	#define	UART2_DMA_CH		2
+	//#define	COM3_DMA		3
+	#define	SPI_DMACH_TX_CH		4
+	#define	SPI_DMACH_RX_CH		5
+	#define	NAND_MEMCOPY_DMA_CH	6
+	#define	I2C_DMACH_CH		7
+	#define	DSP_DMATX_CH		8
+	#define	DSP_DMARX_CH		9
+	#define	CRC_DMA_CH			31
 
 	// ++++++++++++++	EVENT 0...31	++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
@@ -363,9 +366,13 @@
 
 	#ifdef nandTCC
 	
-		#define NAND_RE_PER		(NS2CLK(100)-1)
-		#define NAND_RE_CC0		NS2CLK(55) 
-		#define NAND_RE_CC1		NS2CLK(50)
+		#define NAND_RE_PER_SLOW	(NS2CLK(200)-1)
+		#define NAND_RE_CC0_SLOW	NS2CLK(110) 
+		#define NAND_RE_CC1_SLOW	NS2CLK(100)
+
+		#define NAND_RE_PER_FAST	(NS2CLK(100)-1)
+		#define NAND_RE_CC0_FAST	NS2CLK(55) 
+		#define NAND_RE_CC1_FAST	NS2CLK(50)
 
 		#define WE_PORT_PMUX	(PORT_PMUX_F) 
 		#define RE_PORT_PMUX	(PORT_PMUX_F) 

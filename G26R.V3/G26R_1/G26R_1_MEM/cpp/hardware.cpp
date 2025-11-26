@@ -1,3 +1,4 @@
+#include "hardware.h"
 //#include "types.h"
 #include "core.h"
 //#include "time.h"
@@ -6,7 +7,6 @@
 //#include "list.h"
 //#include "PointerCRC.h"
 
-#include "hardware.h"
 //#include "SEGGER_RTT\SEGGER_RTT.h"
 //#include "hw_conf.h"
 //#include "hw_rtm.h"
@@ -127,6 +127,7 @@ __forceinline 	void DisableVCORE()	{ PIO_ENVCORE->CLR(ENVCORE); 	}
 
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
+#include "time_imp.h"
 
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
@@ -665,7 +666,7 @@ void InitHardware()
 
 #endif
 
-	Init_time(MCK);
+	Init_time();
 	RTT_Init();
 	I2C_Init();
 	SPI_Init();

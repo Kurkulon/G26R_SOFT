@@ -3,6 +3,8 @@
 
 #pragma once
 
+#include "hw_conf.h"
+
 #include <RequestQuery.h>
 #include <ComPort\ComPort.h>
 

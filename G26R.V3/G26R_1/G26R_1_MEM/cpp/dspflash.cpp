@@ -1,7 +1,7 @@
 #ifndef WIN32
 
-#include "SPI.h"
 #include "hw_conf.h"
+#include "SPI.h"
 
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
@@ -10,7 +10,7 @@
 static u32 DSP_FS_MASK[] = { DSP_FS };
 
 static S_SPIM	spi4(DSP_SERCOM_NUM, PIO_DSP_SPCK, PIO_DSP_MOSI, PIO_DSP_MISO, PIO_DSP_FS, DSP_SPCK, DSP_MOSI, DSP_MISO, DSP_PMUX_SPCK, DSP_PMUX_MOSI, DSP_PMUX_MISO,
-					DSP_FS_MASK, ArraySize(DSP_FS_MASK), DSP_DIPO_BITS, DSP_DOPO_BITS, DSP_GEN_SRC, DSP_GEN_CLK, &DSP_DMATX, &DSP_DMARX);
+					DSP_FS_MASK, ArraySize(DSP_FS_MASK), DSP_DIPO_BITS, DSP_DOPO_BITS, DSP_GEN_SRC, DSP_GEN_CLK, DSP_DMATX_CH, DSP_DMARX_CH);
 
 #elif defined(CPU_XMC48)
 
@@ -18,7 +18,7 @@ static S_SPIM	spi4(DSP_SERCOM_NUM, PIO_DSP_SPCK, PIO_DSP_MOSI, PIO_DSP_MISO, PIO
 
 #define FLASH_START_ADR 0
 #define ADSP_CHECKFLASH
-//#define ADSP_CRC_PROTECTION
+#define ADSP_CRC_PROTECTION
 #define AT25_SPI_BAUD_RATE 	5000000
 #define FLASHSPI_WRITESYNC
 

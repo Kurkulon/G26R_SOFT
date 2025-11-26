@@ -1,6 +1,7 @@
 #ifndef HARDWARE_H__23_12_2013__11_37
 #define HARDWARE_H__23_12_2013__11_37
 
+#include "hw_conf.h"
 #include "types.h"
 //#include "core.h"
 #include "time.h"
@@ -9,7 +10,6 @@
 #include "hw_nand.h"
 #include "hw_rtm.h"
 #include "MANCH\manch.h"
-#include "hw_conf.h"
 //#include "FLASH\flash.h"
 
 //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++

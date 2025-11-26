@@ -1,8 +1,7 @@
+#include "hw_conf.h"
 #include "core.h"
-//#include "time.h"
 #include "spi.h"
 #include "SEGGER_RTT\SEGGER_RTT.h"
-#include "hw_conf.h"
 
 
 #ifndef WIN32
@@ -57,7 +56,7 @@ static S_SPIM	spi;
 #elif defined(CPU_SAME53)
 
 static S_SPIM	spi(SPI_SERCOM_NUM, PIO_SPCK, PIO_MOSI, PIO_MISO, PIO_CS, SPCK, MOSI, MISO, SPI_PMUX_SPCK, SPI_PMUX_MOSI, SPI_PMUX_MISO, SPI_CS_MASK, ArraySize(SPI_CS_MASK), 
-					SPI_DIPO_BITS, SPI_DOPO_BITS, SPI_GEN_SRC, SPI_GEN_CLK, &SPI_DMACH_TX, &SPI_DMACH_RX);
+					SPI_DIPO_BITS, SPI_DOPO_BITS, SPI_GEN_SRC, SPI_GEN_CLK, SPI_DMACH_TX_CH, SPI_DMACH_RX_CH);
 
 #elif defined(CPU_XMC48)
 
@@ -279,7 +278,8 @@ void SPI_Destroy()
 
 #endif
 
-//++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
-//++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+#include "spim_imp.h"
+
+//++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
